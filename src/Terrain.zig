@@ -1,5 +1,5 @@
-/// Holds the data of a terrain, handles its generation
-/// No rendering here
+//! Holds the data of a terrain, handles its generation
+// No rendering here
 
 const std = @import("std");
 const block_register = @import("block_register.zig");

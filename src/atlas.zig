@@ -1,4 +1,4 @@
-/// This module makes a an atlas of all the tiles
+//! This module holds an atlas of all the tiles
 
 const std = @import("std");
 const sf = struct {
@@ -9,6 +9,7 @@ const sf = struct {
 
 const TILE_SIZE = 16;
 
+/// This struct builds the atlas
 pub const Builder = struct {
     const AtlasDataT = std.hash_map.StringHashMap(sf.FloatRect);
 
@@ -20,6 +21,7 @@ pub const Builder = struct {
     y: c_uint,
     vertical: bool,
 
+    /// Creates a builder context
     pub fn start(allocator: std.mem.Allocator) !@This() {
         var ret: @This() = .{
             .rects = undefined,
@@ -43,6 +45,10 @@ pub const Builder = struct {
         return ret;
     }
 
+    /// Requests a texture rect from the atlas being built, using its name
+    /// If it isn't loaded, it will be loaded and put on the atlas in a free place
+    /// The atlas will be resized if needed
+    /// Returns the position of the requested texture
     pub fn registerLoadAndGetTextureRect(self: *@This(), name: [:0]const u8) !sf.FloatRect {
         if (self.rects.get(name)) |ret|
             return ret;
@@ -69,7 +75,7 @@ pub const Builder = struct {
         try self.rects.put(name, choosen_place);
         return choosen_place;
     }
-
+    /// Resizes the atlas if needed
     fn resizeCanvasIfNeeded(self: *@This()) !void {
         const size = self.canvas.getSize();
         const needed_size = (sf.Vector2u{ .x = self.width, .y = self.height }).scale(TILE_SIZE);
@@ -93,7 +99,7 @@ pub const Builder = struct {
             self.canvas.setView(view);
         }
     }
-
+    /// Find a new available place on the atlas
     fn moveToNextTile(self: *@This()) void {
         if (self.vertical) {
             self.y += 1;
@@ -111,7 +117,8 @@ pub const Builder = struct {
             }
         }
     }
-
+    /// Destroys this builder, puts the atlas in "texture"
+    /// It needs to be destroyed at the end of the program
     pub fn finish(self: *@This()) !void {
         texture = try self.canvas.getTexture().copy();
 

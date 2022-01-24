@@ -1,4 +1,4 @@
-/// A player
+//! A player
 
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");

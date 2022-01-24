@@ -20,6 +20,7 @@ pub fn main() !void {
     var atlas_builder = try atlas.Builder.start(std.heap.page_allocator);
     try block_register.loadAllBlockTextures(&atlas_builder);
     try atlas_builder.finish();
+    defer atlas.texture.destroy();
 
     // Window
     var window = try sf.RenderWindow.createDefault(.{ .x = 800, .y = 600 }, "SFML works!");

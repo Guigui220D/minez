@@ -1,4 +1,4 @@
-/// A terrain has a reference to this structure to handle its rendering
+//! A terrain has a reference to this structure to handle its rendering
 
 const Terrain = @import("Terrain.zig");
 const block_register = @import("block_register.zig");
