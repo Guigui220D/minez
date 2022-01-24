@@ -85,7 +85,7 @@ pub fn generateLayer(self: *@This(), layer: usize) void {
         }
 
         if (y == 0 and x == 0) {
-            val.* = 1;
+            val.* = 2;
         }
     }
 }
