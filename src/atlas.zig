@@ -9,7 +9,7 @@ const sf = struct {
 
 const TILE_SIZE = 16;
 
-pub const AtlasBuilder = struct {
+pub const Builder = struct {
     const AtlasDataT = std.hash_map.StringHashMap(sf.FloatRect);
 
     rects: AtlasDataT,
@@ -20,7 +20,7 @@ pub const AtlasBuilder = struct {
     y: c_uint,
     vertical: bool,
 
-    pub fn start(allocator: *std.mem.Allocator) !@This() {
+    pub fn start(allocator: std.mem.Allocator) !@This() {
         var ret: @This() = .{
             .rects = undefined,
             .canvas = undefined,
@@ -34,8 +34,11 @@ pub const AtlasBuilder = struct {
         ret.rects = AtlasDataT.init(allocator);
         errdefer ret.rects.deinit();
 
-        ret.canvas = try sf.RenderTexture.create(.{ .x = TILE_SIZE, .y = TILE_SIZE });
+        ret.canvas = try sf.RenderTexture.create(.{ .x = TILE_SIZE * 30, .y = TILE_SIZE * 30 });
         errdefer ret.canvas.destroy();
+        var view = ret.canvas.getDefaultView();
+        view.size.y = -view.size.y;
+        ret.canvas.setView(view);
 
         return ret;
     }
@@ -84,6 +87,10 @@ pub const AtlasBuilder = struct {
             defer sprite.destroy();
 
             self.canvas.draw(sprite, null);
+
+            var view = self.canvas.getDefaultView();
+            view.size.y = -view.size.y;
+            self.canvas.setView(view);
         }
     }
 
@@ -115,7 +122,7 @@ pub const AtlasBuilder = struct {
         var img = texture.copyToImage();
         defer img.destroy();
 
-        img.flipVertically();
+        //img.flipVertically();
         try img.saveToFile("atlas.png");
     }
 };

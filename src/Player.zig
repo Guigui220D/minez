@@ -2,6 +2,7 @@
 
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
+const block_register = @import("block_register.zig");
 const std = @import("std");
 const sf = struct {
     usingnamespace @import("sfml");
@@ -26,6 +27,7 @@ pub fn create(terrain: *Terrain) !@This() {
     var sprite = try sf.Sprite.createFromTexture(texture);
     errdefer sprite.destroy();
     sprite.setPosition(.{ .x = 0, .y = 256 });
+    sprite.setOrigin(.{ .x = 16, .y = 16 });
 
     var dig_clk = try sf.Clock.create();
     errdefer dig_clk.destroy();
@@ -67,7 +69,7 @@ pub fn update(self: *@This(), delta: f32) void {
         _ = self.dig_clk.restart();
 
     self.hpos = std.math.clamp(self.hpos, 0, Terrain.TERRAIN_WIDTH - 1);
-    self.sprite.setPosition(.{ .x = self.hpos * TerrainRenderer.TERRAIN_QUAD_SIZE, .y = 256 });
+    self.sprite.setPosition(.{ .x = self.hpos * TerrainRenderer.TERRAIN_QUAD_SIZE + 16, .y = 256 + 16 });
 }
 
 /// Draws the player on the specified target
@@ -80,6 +82,8 @@ pub fn draw(self: @This(), target: anytype) void {
 fn tryGoDown(self: *@This(), delta: f32) bool {
     // Reset the horizontal position
     self.hpos = std.math.round(self.hpos);
+
+    self.sprite.setRotation(90);
 
     // Scroll the whole terrain
     self.world.scroll(delta * 10);
@@ -105,6 +109,8 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
     // Reset the vertical position
     if (!self.world.snapScroll())
         return false;
+
+    self.sprite.setRotation(0);
 
     self.hpos += delta * 10;
 
@@ -134,6 +140,8 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
     // Reset the vertical position
     if (!self.world.snapScroll())
         return false;
+
+    self.sprite.setRotation(0);
 
     self.hpos -= delta * 10;
 

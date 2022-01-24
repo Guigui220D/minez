@@ -2,6 +2,7 @@
 /// No rendering here
 
 const std = @import("std");
+const block_register = @import("block_register.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
 
 pub const TERRAIN_WIDTH = 12;
@@ -92,6 +93,10 @@ pub fn generateLayer(self: *@This(), layer: usize) void {
 /// Sets a block at the given position
 /// The height y is relative to the current depth
 pub fn setBlock(self: *@This(), x: usize, y: usize, block: u8) void {
+    const old = self.terrain[y][x];
+    std.debug.print("Block at {}, {}, was {}, now {}\n", .{ x, y, old, block });
+    std.debug.print("{} is a {s}\n", .{ old, block_register.ALL_BLOCKS[old].texture_name });
+    std.debug.print("{} is a {s}\n", .{ block, block_register.ALL_BLOCKS[block].texture_name });
     self.terrain[y][x] = block;
     self.renderer.updateVertices(self.terrain);
 }

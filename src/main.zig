@@ -6,6 +6,7 @@ const sf = struct {
 };
 const std = @import("std");
 const atlas = @import("atlas.zig");
+const block_register = @import("block_register.zig");
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
 const Player = @import("Player.zig");
@@ -14,6 +15,11 @@ pub fn main() !void {
     // Random, for terrain generation
     var xoro = std.rand.DefaultPrng.init(@bitCast(u64, std.time.timestamp()));
     var rand = xoro.random();
+
+    // Atlas builder
+    var atlas_builder = try atlas.Builder.start(std.heap.page_allocator);
+    try block_register.loadAllBlockTextures(&atlas_builder);
+    try atlas_builder.finish();
 
     // Window
     var window = try sf.RenderWindow.createDefault(.{ .x = 800, .y = 600 }, "SFML works!");
@@ -37,22 +43,6 @@ pub fn main() !void {
     var player = try Player.create(&terrain);
     defer player.destroy();
 
-    {
-        var tst = try atlas.AtlasBuilder.start(std.heap.page_allocator);
-
-        _ = try tst.registerLoadAndGetTextureRect("res/a.png");
-        _ = try tst.registerLoadAndGetTextureRect("res/b.png");
-        _ = try tst.registerLoadAndGetTextureRect("res/c.png");
-        _ = try tst.registerLoadAndGetTextureRect("res/d.png");
-        _ = try tst.registerLoadAndGetTextureRect("res/e.png");
-
-        try tst.finish();
-    }
-
-    var sprite = try sf.Sprite.createFromTexture(atlas.texture);
-    defer sprite.destroy();
-    
-
     // Main loop
     while (window.isOpen()) {
         while (window.pollEvent()) |event| {
@@ -68,7 +58,6 @@ pub fn main() !void {
         window.clear(sf.Color.Black);
         renderer.draw(&window);
         player.draw(&window);
-        window.draw(sprite, null);
         window.display();
     }
 }
