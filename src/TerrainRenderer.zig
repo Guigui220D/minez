@@ -3,6 +3,8 @@
 const Terrain = @import("Terrain.zig");
 const block_register = @import("block_register.zig");
 const atlas = @import("atlas.zig");
+const gui = @import("gui.zig");
+
 const std = @import("std");
 const sf = struct {
     usingnamespace @import("sfml");
@@ -10,8 +12,8 @@ const sf = struct {
     usingnamespace sf.system;
 };
 
-pub const TERRAIN_QUAD_SIZE = 32;
-const vcount = 4 * Terrain.TERRAIN_WIDTH * Terrain.TERRAIN_HEIGHT;
+pub const QUAD_SIZE = 32;
+const vcount = 4 * Terrain.WIDTH * Terrain.HEIGHT;
 
 buffer: sf.VertexBuffer,
 house_texture: sf.Texture,
@@ -53,7 +55,7 @@ pub fn destroy(self: *@This()) void {
 /// Updates some stuff
 pub fn update(self: *@This(), dt: f32) void {
     _ = dt;
-    self.house_sprite.setPosition(.{ .x = 0, .y = -(self.depth + self.scroll) * TERRAIN_QUAD_SIZE });
+    self.house_sprite.setPosition(.{ .x = 0, .y = -(self.depth + self.scroll) * QUAD_SIZE });
 }
 
 /// Updates all the vertices when the terrain changes
@@ -61,13 +63,13 @@ pub fn updateVertices(self: *@This(), data: Terrain.DataT) void {
     const pslice = sf.Vertex.verticesAsPrimitives(&self.vdata, .Quads);
 
     for (pslice) |*quad, i| {
-        const x = i % Terrain.TERRAIN_WIDTH;
-        const y = i / Terrain.TERRAIN_WIDTH;
+        const x = i % Terrain.WIDTH;
+        const y = i / Terrain.WIDTH;
 
-        quad.a.position = sf.Vector2f{ .x = @intToFloat(f32, x + 0) * TERRAIN_QUAD_SIZE, .y = @intToFloat(f32, y + 0) * TERRAIN_QUAD_SIZE };
-        quad.b.position = sf.Vector2f{ .x = @intToFloat(f32, x + 1) * TERRAIN_QUAD_SIZE, .y = @intToFloat(f32, y + 0) * TERRAIN_QUAD_SIZE };
-        quad.c.position = sf.Vector2f{ .x = @intToFloat(f32, x + 1) * TERRAIN_QUAD_SIZE, .y = @intToFloat(f32, y + 1) * TERRAIN_QUAD_SIZE };
-        quad.d.position = sf.Vector2f{ .x = @intToFloat(f32, x + 0) * TERRAIN_QUAD_SIZE, .y = @intToFloat(f32, y + 1) * TERRAIN_QUAD_SIZE };
+        quad.a.position = sf.Vector2f{ .x = @intToFloat(f32, x + 0) * QUAD_SIZE, .y = @intToFloat(f32, y + 0) * QUAD_SIZE };
+        quad.b.position = sf.Vector2f{ .x = @intToFloat(f32, x + 1) * QUAD_SIZE, .y = @intToFloat(f32, y + 0) * QUAD_SIZE };
+        quad.c.position = sf.Vector2f{ .x = @intToFloat(f32, x + 1) * QUAD_SIZE, .y = @intToFloat(f32, y + 1) * QUAD_SIZE };
+        quad.d.position = sf.Vector2f{ .x = @intToFloat(f32, x + 0) * QUAD_SIZE, .y = @intToFloat(f32, y + 1) * QUAD_SIZE };
 
         const block = block_register.ALL_BLOCKS[data[y][x]];
         quad.a.tex_coords = block.text_a;
@@ -82,7 +84,7 @@ pub fn updateVertices(self: *@This(), data: Terrain.DataT) void {
 /// Draws the terrain on screen
 pub fn draw(self: @This(), target: anytype) void {
     var transform = sf.Transform.Identity;
-    transform.translate(sf.Vector2f{ .x = 0, .y = -self.scroll * TERRAIN_QUAD_SIZE });
+    transform.translate(sf.Vector2f{ .x = 0, .y = -self.scroll * QUAD_SIZE });
 
     target.draw(self.house_sprite, null);
     target.draw(self.buffer, .{ .transform = transform, .texture = atlas.texture });

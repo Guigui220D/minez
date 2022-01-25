@@ -2,7 +2,9 @@
 
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
-const block_register = @import("block_register.zig");
+const ScoreIndicator = @import("ScoreIndicator.zig");
+const gui = @import("gui.zig");
+
 const std = @import("std");
 const sf = struct {
     usingnamespace @import("sfml");
@@ -14,6 +16,8 @@ const sf = struct {
 hpos: f32,
 texture: sf.Texture,
 sprite: sf.Sprite,
+shader: sf.Shader,
+score: ScoreIndicator,
 world: *Terrain,
 dig_clk: sf.Clock,
 
@@ -27,13 +31,23 @@ pub fn create(terrain: *Terrain) !@This() {
     sprite.setPosition(.{ .x = 0, .y = 256 });
     sprite.setOrigin(.{ .x = 16, .y = 16 });
 
+    var shader = try sf.Shader.createFromMemory(null, null, @embedFile("char_shader.fs"));
+    errdefer shader.destroy();
+    shader.setUniform("textureSampler", sf.Shader.CurrentTexture);
+    shader.setUniform("glitch", false);
+
     var dig_clk = try sf.Clock.create();
     errdefer dig_clk.destroy();
+
+    var score = try ScoreIndicator.create();
+    errdefer score.destroy();
 
     return @This(){
         .hpos = 0,
         .texture = texture,
         .sprite = sprite,
+        .shader = shader,
+        .score = score,
         .world = terrain,
         .dig_clk = dig_clk,
     };
@@ -42,6 +56,9 @@ pub fn create(terrain: *Terrain) !@This() {
 pub fn destroy(self: *@This()) void {
     self.texture.destroy();
     self.sprite.destroy();
+    self.dig_clk.destroy();
+    self.shader.destroy();
+    self.score.destroy();
 }
 
 /// Updates the player, handles the controls
@@ -66,13 +83,17 @@ pub fn update(self: *@This(), delta: f32) void {
     if (!digging)
         _ = self.dig_clk.restart();
 
-    self.hpos = std.math.clamp(self.hpos, 0, Terrain.TERRAIN_WIDTH - 1);
-    self.sprite.setPosition(.{ .x = self.hpos * TerrainRenderer.TERRAIN_QUAD_SIZE + 16, .y = 256 + 16 });
+    self.hpos = std.math.clamp(self.hpos, 0, Terrain.WIDTH - 1);
+    self.sprite.setPosition(.{ .x = self.hpos * TerrainRenderer.QUAD_SIZE + 16, .y = 256 + 16 });
+
+    // if (self.world.depth == 10)
+    //     self.shader.setUniform("glitch", true);
 }
 
 /// Draws the player on the specified target
 pub fn draw(self: @This(), target: anytype) void {
-    target.draw(self.sprite, null);
+    target.draw(self.sprite, .{ .shader = self.shader });
+    self.score.draw(target);
 }
 
 /// Move down, dig the ground if impossible
@@ -87,14 +108,14 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
     self.world.scroll(delta * 10);
 
     const x = @floatToInt(usize, self.hpos);
-    const block = block_register.ALL_BLOCKS[self.world.terrain[9][x]];
+    const block = self.world.getBlock(x, 9);
     if (block.dig_time >= 0) {
         // There's a block below
         // Reset the scroll
         _ = self.world.snapScroll();
         // Dig down
         if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
-            self.world.setBlock(x, 9, 0);
+            self.breakBlock(x, 9);
             _ = self.dig_clk.restart();
         }
 
@@ -114,19 +135,19 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
     self.hpos += delta * 10;
 
     const x = @floatToInt(usize, self.hpos + 1);
-    if (x >= Terrain.TERRAIN_WIDTH) {
+    if (x >= Terrain.WIDTH) {
         // Avoid going too far right
         self.hpos = std.math.round(self.hpos);
         return false;
     }
 
-    const block = block_register.ALL_BLOCKS[self.world.terrain[8][x]];
+    const block = self.world.getBlock(x, 8);
     if (block.dig_time >= 0) {
         // There's a block to the right
         self.hpos = std.math.round(self.hpos);
         // Dig right
         if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
-            self.world.setBlock(x, 8, 0);
+            self.breakBlock(x, 8);
             _ = self.dig_clk.restart();
         }
 
@@ -152,17 +173,26 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
     }
 
     const x = @floatToInt(usize, self.hpos);
-    const block = block_register.ALL_BLOCKS[self.world.terrain[8][x]];
+    const block = self.world.getBlock(x, 8);
     if (block.dig_time >= 0) {
         // There's a block to the left
         self.hpos = std.math.round(self.hpos);
         // Dig left
         if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
-            self.world.setBlock(x, 8, 0);
-            _ = self.dig_clk.restart();
+            self.breakBlock(x, 8);
         }
 
         return true;
     }
     return false;
+}
+
+fn breakBlock(self: *@This(), x: usize, y: usize) void {
+    const score = self.world.getBlock(x, y).score;
+    self.world.setBlock(x, y, 0);
+    _ = self.dig_clk.restart();
+    if (score > 0) {
+        self.score.showScore(self.sprite.getPosition(), score);
+        gui.addScore(score);
+    }
 }

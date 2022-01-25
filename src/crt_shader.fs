@@ -33,10 +33,14 @@ vec4 vignette(vec2 uv)
     return vec4(vec3(1.0 - clamp(uv.x * uv.y, 0.0, 1.0)), 1.0);
 }
 
+vec4 lessBits(vec4 col) {
+    return round(col * 16.0) / 16.0;
+}
+
 void main(void) 
 {
     vec2 remappedUV = curveRemapUV(gl_TexCoord[0].st);
-    vec4 baseColor = texture2D(textureSampler, remappedUV);
+    vec4 baseColor = lessBits(texture2D(textureSampler, remappedUV));
 
     if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0){
         gl_FragColor = vec4(0.2, 0.2, 0.2, 1.0);
