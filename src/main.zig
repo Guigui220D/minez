@@ -65,13 +65,14 @@ pub fn main() !void {
 
         var delta = std.math.min(clk.restart().asSeconds(), 0.04);
         player.update(delta);
+        renderer.update(delta);
 
         crt_screen.clear(sf.Color.Black);
         renderer.draw(&crt_screen);
         player.draw(&crt_screen);
         crt_screen.display();
 
-        window.clear(sf.Color.Green);
+        window.clear(sf.Color.Black);
         window.draw(crt_sprite, .{ .shader = crt_shader });
         window.display();
     }

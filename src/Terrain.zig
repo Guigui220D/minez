@@ -64,6 +64,7 @@ fn shiftBlocks(self: *@This()) void {
     mem.copy([TERRAIN_WIDTH]u8, self.terrain[0..], self.terrain[1..]);
     // Fill in deepest layer
     self.depth += 1;
+    self.renderer.depth += 1;
     self.generateLayer(TERRAIN_HEIGHT - 1);
 
     // Update renderer
@@ -75,17 +76,13 @@ pub fn generateLayer(self: *@This(), layer: usize) void {
     // Generate a layer (overrides data)
     const y = layer + self.depth;
     // TODO: Make actual generation
-    for (&self.terrain[layer]) |*val, x| {
-        if (y < 15) {
+    for (&self.terrain[layer]) |*val| {
+        if (y < 9) {
             val.* = 0;
-        } else if (y < 20) {
-            val.* = @truncate(u8, (x + y) % 2 + 1);
+        } else if (y == 9) {
+            val.* = @truncate(u8, 1);
         } else {
             val.* = @truncate(u8, self.rand.uintLessThan(u8, 3));
-        }
-
-        if (y == 0 and x == 0) {
-            val.* = 2;
         }
     }
 }

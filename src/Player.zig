@@ -11,8 +11,6 @@ const sf = struct {
     usingnamespace sf.window;
 };
 
-const DIG_TIME = sf.Time.seconds(0.5);
-
 hpos: f32,
 texture: sf.Texture,
 sprite: sf.Sprite,
@@ -89,12 +87,13 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
     self.world.scroll(delta * 10);
 
     const x = @floatToInt(usize, self.hpos);
-    if (self.world.terrain[9][x] != 0) {
+    const block = block_register.ALL_BLOCKS[self.world.terrain[9][x]];
+    if (block.dig_time >= 0) {
         // There's a block below
         // Reset the scroll
         _ = self.world.snapScroll();
         // Dig down
-        if (self.dig_clk.getElapsedTime().us > DIG_TIME.us) {
+        if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
             self.world.setBlock(x, 9, 0);
             _ = self.dig_clk.restart();
         }
@@ -121,11 +120,12 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
         return false;
     }
 
-    if (self.world.terrain[8][x] != 0) {
+    const block = block_register.ALL_BLOCKS[self.world.terrain[8][x]];
+    if (block.dig_time >= 0) {
         // There's a block to the right
         self.hpos = std.math.round(self.hpos);
         // Dig right
-        if (self.dig_clk.getElapsedTime().us > DIG_TIME.us) {
+        if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
             self.world.setBlock(x, 8, 0);
             _ = self.dig_clk.restart();
         }
@@ -152,12 +152,12 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
     }
 
     const x = @floatToInt(usize, self.hpos);
-
-    if (self.world.terrain[8][x] != 0) {
+    const block = block_register.ALL_BLOCKS[self.world.terrain[8][x]];
+    if (block.dig_time >= 0) {
         // There's a block to the left
         self.hpos = std.math.round(self.hpos);
         // Dig left
-        if (self.dig_clk.getElapsedTime().us > DIG_TIME.us) {
+        if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
             self.world.setBlock(x, 8, 0);
             _ = self.dig_clk.restart();
         }
