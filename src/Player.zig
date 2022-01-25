@@ -86,8 +86,8 @@ pub fn update(self: *@This(), delta: f32) void {
     self.hpos = std.math.clamp(self.hpos, 0, Terrain.WIDTH - 1);
     self.sprite.setPosition(.{ .x = self.hpos * TerrainRenderer.QUAD_SIZE + 16, .y = 256 + 16 });
 
-    // if (self.world.depth == 10)
-    //     self.shader.setUniform("glitch", true);
+    if (gui.getScore() > 10000)
+        self.shader.setUniform("glitch", true);
 }
 
 /// Draws the player on the specified target
@@ -102,7 +102,8 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
     // Reset the horizontal position
     self.hpos = std.math.round(self.hpos);
 
-    self.sprite.setRotation(90);
+    //self.sprite.setScale(.{ .x = 1, .y = 1 });
+    self.sprite.setRotation(-90 * self.sprite.getScale().x);
 
     // Scroll the whole terrain
     self.world.scroll(delta * 10);
@@ -130,6 +131,7 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
     if (!self.world.snapScroll())
         return false;
 
+    self.sprite.setScale(.{ .x = -1, .y = 1 });
     self.sprite.setRotation(0);
 
     self.hpos += delta * 10;
@@ -162,6 +164,7 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
     if (!self.world.snapScroll())
         return false;
 
+    self.sprite.setScale(.{ .x = 1, .y = 1 });
     self.sprite.setRotation(0);
 
     self.hpos -= delta * 10;
@@ -187,6 +190,7 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
     return false;
 }
 
+/// Break a block, show the score and update the score
 fn breakBlock(self: *@This(), x: usize, y: usize) void {
     const score = self.world.getBlock(x, y).score;
     self.world.setBlock(x, y, 0);

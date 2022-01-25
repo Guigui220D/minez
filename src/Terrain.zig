@@ -6,6 +6,7 @@ const block_register = @import("block_register.zig");
 const gui = @import("gui.zig");
 const Block = @import("Block.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
+const EntityManager = @import("EntityManager.zig");
 
 pub const WIDTH = 12;
 pub const HEIGHT = 20;

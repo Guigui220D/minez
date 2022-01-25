@@ -12,7 +12,13 @@ uniform vec2 screenResolution;
 uniform vec2 scanLineOpacity;
 
 uniform float brightness;
+uniform float distortion;
  
+float distort(float x) 
+{
+    return cos((x - distortion) * 12) * exp(-abs(12 * (x - distortion)));
+}
+
 vec2 curveRemapUV(vec2 uv)
 {
     vec2 offset = abs(uv.yx - vec2(0.5, 0.5)) / vec2(curvature.x, curvature.y);
@@ -40,15 +46,25 @@ vec4 lessBits(vec4 col) {
 void main(void) 
 {
     vec2 remappedUV = curveRemapUV(gl_TexCoord[0].st);
-    vec4 baseColor = lessBits(texture2D(textureSampler, remappedUV));
+    
 
     if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0){
         gl_FragColor = vec4(0.2, 0.2, 0.2, 1.0);
-    } else {
+    } 
+    else 
+    {
+        vec2 uv2 = remappedUV;
+        //uv2.x = uv2.x + distort(uv2.y);
+        vec4 baseColor = lessBits(texture2D(textureSampler, uv2));
+        if (uv2.x > 1.0)
+        {
+            baseColor = vec4(vec3(0.0), 1.0);
+        }
         baseColor *= scanLineIntensity(remappedUV.x, screenResolution.y, scanLineOpacity.x);
         baseColor *= scanLineIntensity(remappedUV.y, screenResolution.x, scanLineOpacity.y);
         baseColor *= vignette(remappedUV);
         baseColor *= vec4(vec3(brightness), 1.0);
+        
         gl_FragColor = baseColor;
     }
 }
