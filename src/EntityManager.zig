@@ -11,6 +11,8 @@ pub fn init(allocator: std.mem.Allocator) @This() {
 }
 
 pub fn deinit(self: *@This()) void {
+    for (self.entities.items) |*ent|
+        ent.destroy();
     self.entities.deinit();
 }
 

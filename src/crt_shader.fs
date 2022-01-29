@@ -54,7 +54,7 @@ void main(void)
     else 
     {
         vec2 uv2 = remappedUV;
-        //uv2.x = uv2.x + distort(uv2.y);
+        uv2.x = uv2.x + distort(uv2.y);
         vec4 baseColor = lessBits(texture2D(textureSampler, uv2));
         if (uv2.x > 1.0)
         {

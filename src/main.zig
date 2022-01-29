@@ -10,11 +10,13 @@ const atlas = @import("atlas.zig");
 const crt = @import("crt.zig");
 const gui = @import("gui.zig");
 const block_register = @import("block_register.zig");
+const entity_resources = @import("entity_resources.zig");
 
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
 const Player = @import("Player.zig");
 const EntityManager = @import("EntityManager.zig");
+const Entity = @import("Entity.zig");
 
 pub fn main() !void {
     // Random, for terrain generation
@@ -35,6 +37,9 @@ pub fn main() !void {
     var crt_screen = try sf.RenderTexture.create(.{ .x = crt.WIDTH, .y = crt.HEIGHT });
     defer crt_screen.destroy();
     crt_screen.setSmooth(true);
+    var crt_view = crt_screen.getView();
+    crt_view.setCenter(.{ .x = crt.WIDTH / 2, .y = -crt.HEIGHT / 2 });
+    crt_screen.setView(crt_view);
     var crt_sprite = try sf.Sprite.createFromTexture(crt_screen.getTexture());
     defer crt_sprite.destroy();
     //crt_sprite.setPosition(.{ .x = crt.WIDTH / 2, .y = 0 });
@@ -46,8 +51,7 @@ pub fn main() !void {
     crt_shader.setUniform("screenResolution", sf.Vector2f{ .x = crt.WIDTH / 4, .y = crt.HEIGHT / 4 });
     crt_shader.setUniform("scanLineOpacity", sf.Vector2f{ .x = 0.5, .y = 0.2 });
     crt_shader.setUniform("brightness", @as(f32, 1.8));
-    var diss: f32 = 0.5;
-    crt_shader.setUniform("distortion", @as(f32, diss));
+    crt_shader.setUniform("distortion", @as(f32, 0));
 
     // GUI
     try gui.init();
@@ -56,6 +60,8 @@ pub fn main() !void {
     // Game clock
     var clk = try sf.Clock.create();
     defer clk.destroy();
+    var global_clk = try sf.Clock.create();
+    defer global_clk.destroy();
 
     // Terrain
     var renderer = try TerrainRenderer.create();
@@ -63,15 +69,13 @@ pub fn main() !void {
     var terrain = Terrain.init(&renderer, &rand);
 
     // Entities
+    try entity_resources.loadAll();
+    defer entity_resources.unloadAll();
+
     var entity_manager = EntityManager.init(std.heap.page_allocator);
     defer entity_manager.deinit();
-    // TODO: Move this elsewhere
-    var house_texture = try sf.Texture.createFromFile("res/house.png");
-    defer house_texture.destroy();
-    var house_sprite = try sf.Sprite.createFromTexture(house_texture);
-    defer house_sprite.destroy();
-    house_sprite.setScale(.{ .x = 2, .y = 2 });
-    try entity_manager.entities.append(.{ .sprite = house_sprite, .world = &terrain });
+    try entity_manager.entities.append(try Entity.create(&terrain, .Decoration, .{ .x = 0, .y = 0 }));
+    //try entity_manager.entities.append(try Entity.create(&terrain, .Silverfish, .{ .x = 0, .y = 512 }));
 
     // Player
     var player = try Player.create(&terrain);
@@ -83,27 +87,31 @@ pub fn main() !void {
             switch (event) {
                 .closed => window.close(),
                 .keyPressed => |k| {
-                    if (k.code == .S)
-                        diss += 0.01;
-                    if (k.code == .Z)
-                        diss -= 0.01;
-                    crt_shader.setUniform("distortion", @as(f32, diss));
+                    if (k.code == .Space)
+                        gui.leaveTitle();
                 },
                 else => continue,
             }
         }
 
+        // Update
+        crt_shader.setUniform("distortion", @as(f32, global_clk.getElapsedTime().asSeconds() * 3));
         var delta = std.math.min(clk.restart().asSeconds(), 0.04);
-        player.update(delta);
-        entity_manager.updateAll(delta);
+        gui.updateView(&crt_view);
+        crt_screen.setView(crt_view);
 
+        if (gui.isReady()) {
+            player.update(delta);
+            entity_manager.updateAll(delta);
+        }
+        // Draw crt
         crt_screen.clear(sf.Color.Black);
         renderer.draw(&crt_screen);
         entity_manager.drawAll(&crt_screen);
         player.draw(&crt_screen);
         gui.draw(&crt_screen);
         crt_screen.display();
-
+        // Render crt with shader
         window.clear(sf.Color.Black);
         window.draw(crt_sprite, .{ .shader = crt_shader });
         window.display();

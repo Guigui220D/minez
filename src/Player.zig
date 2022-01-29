@@ -20,6 +20,8 @@ shader: sf.Shader,
 score: ScoreIndicator,
 world: *Terrain,
 dig_clk: sf.Clock,
+dig_texture: sf.Texture,
+dig_sprite: sf.Sprite,
 
 /// Creates the player
 pub fn create(terrain: *Terrain) !@This() {
@@ -42,6 +44,15 @@ pub fn create(terrain: *Terrain) !@This() {
     var score = try ScoreIndicator.create();
     errdefer score.destroy();
 
+    var dig_texture = try sf.Texture.createFromFile("res/breaking.png");
+    errdefer dig_texture.destroy();
+
+    var dig_sprite = try sf.Sprite.createFromTexture(dig_texture);
+    errdefer dig_sprite.destroy();
+    dig_sprite.setTextureRect(.{ .left = 0, .top = 0, .width = 16, .height = 16 });
+    dig_sprite.setColor(sf.Color.Transparent);
+    dig_sprite.setScale(.{ .x = 2, .y = 2 });
+
     return @This(){
         .hpos = 0,
         .texture = texture,
@@ -50,6 +61,8 @@ pub fn create(terrain: *Terrain) !@This() {
         .score = score,
         .world = terrain,
         .dig_clk = dig_clk,
+        .dig_texture = dig_texture,
+        .dig_sprite = dig_sprite,
     };
 }
 /// Destroys the player
@@ -68,20 +81,18 @@ pub fn update(self: *@This(), delta: f32) void {
     if (sf.keyboard.isKeyPressed(.Right)) {
         if (self.tryGoRight(delta))
             digging = true;
-    }
-
-    if (sf.keyboard.isKeyPressed(.Left)) {
+    } else if (sf.keyboard.isKeyPressed(.Left)) {
         if (self.tryGoLeft(delta))
             digging = true;
-    }
-
-    if (sf.keyboard.isKeyPressed(.Down)) {
+    } else if (sf.keyboard.isKeyPressed(.Down)) {
         if (self.tryGoDown(delta))
             digging = true;
     }
 
-    if (!digging)
+    if (!digging) {
         _ = self.dig_clk.restart();
+        self.dig_sprite.setColor(sf.Color.Transparent);
+    }
 
     self.hpos = std.math.clamp(self.hpos, 0, Terrain.WIDTH - 1);
     self.sprite.setPosition(.{ .x = self.hpos * TerrainRenderer.QUAD_SIZE + 16, .y = 256 + 16 });
@@ -93,6 +104,7 @@ pub fn update(self: *@This(), delta: f32) void {
 /// Draws the player on the specified target
 pub fn draw(self: @This(), target: anytype) void {
     target.draw(self.sprite, .{ .shader = self.shader });
+    target.draw(self.dig_sprite, null);
     self.score.draw(target);
 }
 
@@ -119,6 +131,11 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
             self.breakBlock(x, 9);
             _ = self.dig_clk.restart();
         }
+
+        self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 + 32 });
+        self.dig_sprite.setColor(sf.Color.White);
+        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() / block.dig_time) * 4);
+        self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;
     }
@@ -153,6 +170,11 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
             _ = self.dig_clk.restart();
         }
 
+        self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 });
+        self.dig_sprite.setColor(sf.Color.White);
+        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() / block.dig_time) * 4);
+        self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
+
         return true;
     }
     return false;
@@ -184,6 +206,11 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
         if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
             self.breakBlock(x, 8);
         }
+
+        self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 });
+        self.dig_sprite.setColor(sf.Color.White);
+        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() / block.dig_time) * 4);
+        self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;
     }
