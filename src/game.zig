@@ -18,6 +18,8 @@ const Player = @import("Player.zig");
 const EntityManager = @import("EntityManager.zig");
 const Entity = @import("Entity.zig");
 
+pub var player: Player = undefined;
+
 pub fn main() !void {
     // Random, for terrain generation
     var xoro = std.rand.DefaultPrng.init(@bitCast(u64, std.time.timestamp()));
@@ -75,10 +77,10 @@ pub fn main() !void {
     var entity_manager = EntityManager.init(std.heap.page_allocator);
     defer entity_manager.deinit();
     try entity_manager.entities.append(try Entity.create(&terrain, .Decoration, .{ .x = 0, .y = 0 }));
-    //try entity_manager.entities.append(try Entity.create(&terrain, .Silverfish, .{ .x = 0, .y = 512 }));
+    try entity_manager.entities.append(try Entity.create(&terrain, .Angerman, .{ .x = 96, .y = 512 }));
 
     // Player
-    var player = try Player.create(&terrain);
+    player = try Player.create(&terrain);
     defer player.destroy();
 
     // Main loop

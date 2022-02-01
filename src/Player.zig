@@ -22,6 +22,7 @@ world: *Terrain,
 dig_clk: sf.Clock,
 dig_texture: sf.Texture,
 dig_sprite: sf.Sprite,
+doing: bool,
 
 /// Creates the player
 pub fn create(terrain: *Terrain) !@This() {
@@ -63,6 +64,7 @@ pub fn create(terrain: *Terrain) !@This() {
         .dig_clk = dig_clk,
         .dig_texture = dig_texture,
         .dig_sprite = dig_sprite,
+        .doing = false,
     };
 }
 /// Destroys the player
@@ -78,13 +80,18 @@ pub fn destroy(self: *@This()) void {
 pub fn update(self: *@This(), delta: f32) void {
     var digging = false;
 
+    self.doing = false;
+
     if (sf.keyboard.isKeyPressed(.Right)) {
+        self.doing = true;
         if (self.tryGoRight(delta))
             digging = true;
     } else if (sf.keyboard.isKeyPressed(.Left)) {
+        self.doing = true;
         if (self.tryGoLeft(delta))
             digging = true;
     } else if (sf.keyboard.isKeyPressed(.Down)) {
+        self.doing = true;
         if (self.tryGoDown(delta))
             digging = true;
     }
@@ -226,4 +233,9 @@ fn breakBlock(self: *@This(), x: usize, y: usize) void {
         self.score.showScore(self.sprite.getPosition(), score);
         gui.addScore(score);
     }
+}
+
+pub fn getGlobalPosition(self: @This()) sf.Vector2f {
+    const scroll = sf.Vector2f{ .x = 0, .y = self.world.renderer.getScroll() * TerrainRenderer.QUAD_SIZE };
+    return self.sprite.getPosition().add(scroll);
 }
