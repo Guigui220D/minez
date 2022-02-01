@@ -23,6 +23,7 @@ dig_clk: sf.Clock,
 dig_texture: sf.Texture,
 dig_sprite: sf.Sprite,
 doing: bool,
+mining_speed: f32 = 1,
 
 /// Creates the player
 pub fn create(terrain: *Terrain) !@This() {
@@ -31,6 +32,7 @@ pub fn create(terrain: *Terrain) !@This() {
 
     var sprite = try sf.Sprite.createFromTexture(texture);
     errdefer sprite.destroy();
+    sprite.setTextureRect(.{ .top = 0, .left = 0, .width = 32, .height = 32 });
     sprite.setPosition(.{ .x = 0, .y = 256 });
     sprite.setOrigin(.{ .x = 16, .y = 16 });
 
@@ -104,8 +106,7 @@ pub fn update(self: *@This(), delta: f32) void {
     self.hpos = std.math.clamp(self.hpos, 0, Terrain.WIDTH - 1);
     self.sprite.setPosition(.{ .x = self.hpos * TerrainRenderer.QUAD_SIZE + 16, .y = 256 + 16 });
 
-    if (gui.getScore() > 10000)
-        self.shader.setUniform("glitch", true);
+    self.shader.setUniform("glitch", self.mining_speed <= 0);
 }
 
 /// Draws the player on the specified target
@@ -134,14 +135,14 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
         // Reset the scroll
         _ = self.world.snapScroll();
         // Dig down
-        if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
+        if (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed > block.dig_time) {
             self.breakBlock(x, 9);
             _ = self.dig_clk.restart();
         }
 
         self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 + 32 });
         self.dig_sprite.setColor(sf.Color.White);
-        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() / block.dig_time) * 4);
+        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
         self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;
@@ -172,14 +173,14 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
         // There's a block to the right
         self.hpos = std.math.round(self.hpos);
         // Dig right
-        if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
+        if (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed > block.dig_time) {
             self.breakBlock(x, 8);
             _ = self.dig_clk.restart();
         }
 
         self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 });
         self.dig_sprite.setColor(sf.Color.White);
-        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() / block.dig_time) * 4);
+        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
         self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;
@@ -210,13 +211,13 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
         // There's a block to the left
         self.hpos = std.math.round(self.hpos);
         // Dig left
-        if (self.dig_clk.getElapsedTime().asSeconds() > block.dig_time) {
+        if (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed > block.dig_time) {
             self.breakBlock(x, 8);
         }
 
         self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 });
         self.dig_sprite.setColor(sf.Color.White);
-        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() / block.dig_time) * 4);
+        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
         self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;
@@ -232,6 +233,20 @@ fn breakBlock(self: *@This(), x: usize, y: usize) void {
     if (score > 0) {
         self.score.showScore(self.sprite.getPosition(), score);
         gui.addScore(score);
+
+        if (gui.getScore() >= 1800) {
+            self.mining_speed = 1.5;
+            self.sprite.setTextureRect(.{ .top = 32, .left = 0, .width = 32, .height = 32 });
+        }
+
+        if (gui.getScore() >= 3600) {
+            self.mining_speed = 2;
+            self.sprite.setTextureRect(.{ .top = 64, .left = 0, .width = 32, .height = 32 });
+        }
+        if (gui.getScore() >= 7200) {
+            self.mining_speed = 2.2;
+            self.sprite.setTextureRect(.{ .top = 96, .left = 0, .width = 32, .height = 32 });
+        }
     }
 }
 

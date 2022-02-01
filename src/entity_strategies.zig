@@ -3,6 +3,7 @@ const std = @import("std");
 const Entity = @import("Entity.zig");
 const crt = @import("crt.zig");
 const game = @import("game.zig");
+const gui = @import("gui.zig");
 
 pub fn doNothing(self: *Entity, delta: f32) void {
     _ = self;
@@ -36,15 +37,31 @@ pub fn angerman(self: *Entity, delta: f32) void {
     const left: c_int = if (len < 100) 8 else 0;
     self.sprite.setTextureRect(.{ .left = left, .top = 0, .width = 8, .height = 12 });
 
+    if (len < 16) {
+        game.player.mining_speed = 0;
+        self.data.Angerman.angry = false;
+    }
+        
+
     // Animation
     const rotation = std.math.sin(self.data.Angerman.clk.getElapsedTime().asSeconds());
     self.sprite.setRotation(rotation * 10);
 
     self.shader.?.setUniform("time", self.data.Angerman.clk.getElapsedTime().asSeconds());
 
-    if (!game.player.doing)
-        return;
+    if (gui.getScore() < 10000) {
+        if (!game.player.doing)
+            return;
+        if (!self.data.Angerman.angry)
+            return;
 
-    // Go towards player
-    self.position = self.position.add(diff.scale(delta));
+        // Go towards player
+        self.position = self.position.add(diff.scale(delta));
+    } else {
+        if (self.sprite.getPosition().y < -100)
+            return;
+
+        self.position.y -= delta * 96;
+    }
+
 }

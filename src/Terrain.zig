@@ -82,14 +82,22 @@ pub fn generateLayer(self: *@This(), layer: usize) void {
     for (&self.terrain[layer]) |*val| {
         if (y < 9) {
             val.* = 0;
-        } else if (y == 9) {
-            val.* = @truncate(u8, 1);
-        } else if (gui.getScore() < 1000) {
-            val.* = @truncate(u8, self.rand.uintLessThan(u8, 4));
-        } else if (gui.getScore() < 6000) {
-            val.* = @truncate(u8, self.rand.uintLessThan(u8, 4) + 1);
+        } else if (y <= 11) {
+            val.* = 1;
         } else {
-            val.* = @truncate(u8, self.rand.uintLessThan(u8, 4) + 2);
+            const stone_id = @floatToInt(u8, std.math.clamp(self.rand.floatNorm(f32) * 0.5 + (@intToFloat(f32, y) / 50), 0, 4));
+            val.* = stone_id + 1;
+
+            if (self.rand.float(f32) < (5.0 / 100.0)) {
+                val.* = 6;
+            } else if (y > 100) {
+                if (self.rand.float(f32) < (4.0 / 100.0)) {
+                    val.* = 7;
+                } else if (y > 200) {
+                    if (self.rand.float(f32) < (3.0 / 100.0))
+                        val.* = 8;
+                }
+            }
         }
     }
 }

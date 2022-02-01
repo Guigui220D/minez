@@ -81,13 +81,6 @@ pub fn draw(target: anytype) void {
 pub fn addScore(amount: i32) void {
     score += amount;
     top_text.setStringFmt("Score: {}", .{ score} ) catch unreachable;
-
-    if (score >= 1000 and score - amount < 1000) {
-        bottom_text.setString("You reached the diamond caves");
-    }
-    if (score >= 6000 and score - amount < 6000) {
-        bottom_text.setString("You reached\nthe deep dark");
-    }
 }
 
 pub fn getScore() i32 {
