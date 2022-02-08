@@ -19,6 +19,7 @@ buffer: sf.VertexBuffer,
 vdata: [vcount]sf.Vertex,
 scroll: f32,
 depth: f32,
+texture: sf.Texture,
 
 /// Creates a new renderer (needs to be destroyed)
 pub fn create() !@This() {
@@ -33,6 +34,8 @@ pub fn create() !@This() {
 
     new.scroll = 0;
     new.depth = 0;
+
+    new.texture = atlas.getTexture();
 
     return new;
 }
@@ -68,7 +71,7 @@ pub fn updateVertices(self: *@This(), data: Terrain.DataT) void {
 pub fn draw(self: @This(), target: anytype) void {
     var transform = sf.Transform.Identity;
     transform.translate(sf.Vector2f{ .x = 0, .y = -self.scroll * QUAD_SIZE });
-    target.draw(self.buffer, .{ .transform = transform, .texture = atlas.texture });
+    target.draw(self.buffer, .{ .transform = transform, .texture = self.texture });
 }
 
 pub fn getScroll(self: @This()) f32 {

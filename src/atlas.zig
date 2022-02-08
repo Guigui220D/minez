@@ -134,4 +134,14 @@ pub const Builder = struct {
     }
 };
 
-pub var texture: sf.Texture = undefined;
+var texture: sf.Texture = undefined;
+
+pub fn getTexture() sf.Texture {
+    var tex = texture;
+    tex.makeConst(); // TODO: replace makeConst by getConst which copies in the wrapper?
+    return tex;
+}
+
+pub fn destroy() void {
+    texture.destroy();
+}

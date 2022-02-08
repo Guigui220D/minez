@@ -11,7 +11,7 @@ pub fn build(b: *Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    const exe = b.addExecutable("sfml", "src/game.zig");
+    const exe = b.addExecutable("minez", "src/main.zig");
     exe.linkLibC();
     exe.addPackagePath("sfml", "zig-sfml-wrapper/src/sfml/sfml.zig");
     exe.addLibPath("csfml/lib/msvc/");

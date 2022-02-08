@@ -16,13 +16,11 @@ pub const DataT = [HEIGHT][WIDTH]u8;
 terrain: DataT,
 depth: usize = 0,
 renderer: *TerrainRenderer,
-rand: *std.rand.Random,
 
 /// Initializes the terrain, generates all layers
-pub fn init(renderer: *TerrainRenderer, random: *std.rand.Random) @This() {
+pub fn init(renderer: *TerrainRenderer) @This() {
     var new: @This() = undefined;
 
-    new.rand = random;
     new.renderer = renderer;
     // Reset depth
     new.depth = 0;
@@ -76,6 +74,7 @@ fn shiftBlocks(self: *@This()) void {
 
 /// Generates a new layer of terrain
 pub fn generateLayer(self: *@This(), layer: usize) void {
+    const rand = @import("game.zig").random;
     // Generate a layer (overrides data)
     const y = layer + self.depth;
     // TODO: Make actual generation
@@ -85,16 +84,16 @@ pub fn generateLayer(self: *@This(), layer: usize) void {
         } else if (y <= 11) {
             val.* = 1;
         } else {
-            const stone_id = @floatToInt(u8, std.math.clamp(self.rand.floatNorm(f32) * 0.5 + (@intToFloat(f32, y) / 50), 0, 4));
+            const stone_id = @floatToInt(u8, std.math.clamp(rand.floatNorm(f32) * 0.5 + (@intToFloat(f32, y) / 50), 0, 4));
             val.* = stone_id + 1;
 
-            if (self.rand.float(f32) < (5.0 / 100.0)) {
+            if (rand.float(f32) < (5.0 / 100.0)) {
                 val.* = 6;
             } else if (y > 100) {
-                if (self.rand.float(f32) < (4.0 / 100.0)) {
+                if (rand.float(f32) < (4.0 / 100.0)) {
                     val.* = 7;
                 } else if (y > 200) {
-                    if (self.rand.float(f32) < (3.0 / 100.0))
+                    if (rand.float(f32) < (3.0 / 100.0))
                         val.* = 8;
                 }
             }

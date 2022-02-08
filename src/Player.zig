@@ -1,5 +1,6 @@
 //! A player
 
+const game = @import("game.zig");
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
 const ScoreIndicator = @import("ScoreIndicator.zig");
@@ -18,7 +19,6 @@ texture: sf.Texture,
 sprite: sf.Sprite,
 shader: sf.Shader,
 score: ScoreIndicator,
-world: *Terrain,
 dig_clk: sf.Clock,
 dig_texture: sf.Texture,
 dig_sprite: sf.Sprite,
@@ -26,7 +26,7 @@ doing: bool,
 mining_speed: f32 = 1,
 
 /// Creates the player
-pub fn create(terrain: *Terrain) !@This() {
+pub fn create() !@This() {
     var texture = try sf.Texture.createFromFile("res/char.png");
     errdefer texture.destroy();
 
@@ -62,7 +62,6 @@ pub fn create(terrain: *Terrain) !@This() {
         .sprite = sprite,
         .shader = shader,
         .score = score,
-        .world = terrain,
         .dig_clk = dig_clk,
         .dig_texture = dig_texture,
         .dig_sprite = dig_sprite,
@@ -126,14 +125,14 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
     self.sprite.setRotation(-90 * self.sprite.getScale().x);
 
     // Scroll the whole terrain
-    self.world.scroll(delta * 10);
+    game.world.scroll(delta * 10);
 
     const x = @floatToInt(usize, self.hpos);
-    const block = self.world.getBlock(x, 9);
+    const block = game.world.getBlock(x, 9);
     if (block.dig_time >= 0) {
         // There's a block below
         // Reset the scroll
-        _ = self.world.snapScroll();
+        _ = game.world.snapScroll();
         // Dig down
         if (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed > block.dig_time) {
             self.breakBlock(x, 9);
@@ -153,7 +152,7 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
 /// Returns true if the player is digging now
 fn tryGoRight(self: *@This(), delta: f32) bool {
     // Reset the vertical position
-    if (!self.world.snapScroll())
+    if (!game.world.snapScroll())
         return false;
 
     self.sprite.setScale(.{ .x = -1, .y = 1 });
@@ -168,7 +167,7 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
         return false;
     }
 
-    const block = self.world.getBlock(x, 8);
+    const block = game.world.getBlock(x, 8);
     if (block.dig_time >= 0) {
         // There's a block to the right
         self.hpos = std.math.round(self.hpos);
@@ -191,7 +190,7 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
 /// Returns true if the player is digging now
 fn tryGoLeft(self: *@This(), delta: f32) bool {
     // Reset the vertical position
-    if (!self.world.snapScroll())
+    if (!game.world.snapScroll())
         return false;
 
     self.sprite.setScale(.{ .x = 1, .y = 1 });
@@ -206,7 +205,7 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
     }
 
     const x = @floatToInt(usize, self.hpos);
-    const block = self.world.getBlock(x, 8);
+    const block = game.world.getBlock(x, 8);
     if (block.dig_time >= 0) {
         // There's a block to the left
         self.hpos = std.math.round(self.hpos);
@@ -227,8 +226,8 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
 
 /// Break a block, show the score and update the score
 fn breakBlock(self: *@This(), x: usize, y: usize) void {
-    const score = self.world.getBlock(x, y).score;
-    self.world.setBlock(x, y, 0);
+    const score = game.world.getBlock(x, y).score;
+    game.world.setBlock(x, y, 0);
     _ = self.dig_clk.restart();
     if (score > 0) {
         self.score.showScore(self.sprite.getPosition(), score);
@@ -251,6 +250,6 @@ fn breakBlock(self: *@This(), x: usize, y: usize) void {
 }
 
 pub fn getGlobalPosition(self: @This()) sf.Vector2f {
-    const scroll = sf.Vector2f{ .x = 0, .y = self.world.renderer.getScroll() * TerrainRenderer.QUAD_SIZE };
+    const scroll = sf.Vector2f{ .x = 0, .y = game.world.renderer.getScroll() * TerrainRenderer.QUAD_SIZE };
     return self.sprite.getPosition().add(scroll);
 }

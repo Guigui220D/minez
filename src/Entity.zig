@@ -4,6 +4,7 @@ const sf = struct {
     usingnamespace sf.graphics;
 };
 
+const game = @import("game.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
 const Terrain = @import("Terrain.zig");
 const entity_strategies = @import("entity_strategies.zig");
@@ -23,7 +24,6 @@ pub const SpecificData = union(Type) {
 
 position: sf.Vector2f,
 sprite: sf.Sprite,
-world: *Terrain,
 updateFn: fn(self: *@This(), delta: f32) void,
 data: SpecificData,
 shader: ?sf.Shader,
@@ -31,11 +31,10 @@ active: bool,
 visible: bool,
 to_remove: bool,
 
-pub fn create(world: *Terrain, entity_type: Type, position: sf.Vector2f) !@This() {
+pub fn create(entity_type: Type, position: sf.Vector2f) !@This() {
     var new: @This() = undefined;
 
     new.position = position;
-    new.world = world;
 
     new.active = true;
     new.visible = true;
@@ -100,7 +99,7 @@ pub fn destroy(self: *@This()) void {
 pub fn update(self: *@This(), delta: f32) void {
     if (self.active)
         self.updateFn(self, delta);
-    self.sprite.setPosition(self.position.substract(.{ .x = 0, .y = self.world.renderer.getScroll() * TerrainRenderer.QUAD_SIZE }));
+    self.sprite.setPosition(self.position.substract(.{ .x = 0, .y = game.world.renderer.getScroll() * TerrainRenderer.QUAD_SIZE }));
 }
 
 pub fn draw(self: @This(), target: anytype) void {
