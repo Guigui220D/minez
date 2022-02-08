@@ -53,7 +53,10 @@ pub const Builder = struct {
         if (self.rects.get(name)) |ret|
             return ret;
 
-        var tile = try sf.Texture.createFromFile(name);
+        var buffer: [128]u8 = undefined;
+        var path = try std.fmt.bufPrintZ(&buffer, "res/block/{s}", .{name});
+
+        var tile = try sf.Texture.createFromFile(path);
         defer tile.destroy();
 
         defer self.moveToNextTile();

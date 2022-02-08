@@ -27,7 +27,7 @@ mining_speed: f32 = 1,
 
 /// Creates the player
 pub fn create() !@This() {
-    var texture = try sf.Texture.createFromFile("res/char.png");
+    var texture = try sf.Texture.createFromFile("res/entity/char.png");
     errdefer texture.destroy();
 
     var sprite = try sf.Sprite.createFromTexture(texture);
@@ -36,7 +36,7 @@ pub fn create() !@This() {
     sprite.setPosition(.{ .x = 0, .y = 256 });
     sprite.setOrigin(.{ .x = 16, .y = 16 });
 
-    var shader = try sf.Shader.createFromMemory(null, null, @embedFile("char_shader.fs"));
+    var shader = try sf.Shader.createFromFile(null, null, "res/shader/char_shader.fs");
     errdefer shader.destroy();
     shader.setUniform("textureSampler", sf.Shader.CurrentTexture);
     shader.setUniform("glitch", false);
@@ -47,7 +47,7 @@ pub fn create() !@This() {
     var score = try ScoreIndicator.create();
     errdefer score.destroy();
 
-    var dig_texture = try sf.Texture.createFromFile("res/breaking.png");
+    var dig_texture = try sf.Texture.createFromFile("res/other/breaking.png");
     errdefer dig_texture.destroy();
 
     var dig_sprite = try sf.Sprite.createFromTexture(dig_texture);

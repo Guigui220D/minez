@@ -90,7 +90,7 @@ fn initCrt() !void {
     crt_sprite = try sf.Sprite.createFromTexture(crt_screen.getTexture());
     errdefer crt_sprite.destroy();
     // Crt shader
-    crt_shader = try sf.Shader.createFromMemory(null, null, @embedFile("crt_shader.fs"));
+    crt_shader = try sf.Shader.createFromFile(null, null, "res/shader/crt_shader.fs");
     errdefer crt_shader.destroy();
     crt_shader.setUniform("textureSampler", sf.Shader.CurrentTexture);
     crt_shader.setUniform("curvature", sf.Vector2f{ .x = 2.5, .y = 2.5 });

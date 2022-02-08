@@ -35,7 +35,7 @@ pub fn init() !void {
     footer_rect.setFillColor(sf.Color.Black);
     footer_rect.setPosition(.{ .x = 0, .y = crt.HEIGHT - BAR_WIDTH });
 
-    font = try sf.Font.createFromFile("res/ARCADE_R.TTF");
+    font = try sf.Font.createFromFile("res/font/ARCADE_R.TTF");
     errdefer font.destroy();
 
     top_text = try sf.Text.createWithText("Score: 0", font, 24);
@@ -45,7 +45,7 @@ pub fn init() !void {
     errdefer bottom_text.destroy();
     bottom_text.setPosition(.{ .x = 0, .y = crt.HEIGHT - BAR_WIDTH });
 
-    title_texture = try sf.Texture.createFromFile("res/title.png");
+    title_texture = try sf.Texture.createFromFile("res/gui/title.png");
     errdefer title_texture.destroy();
 
     title_sprite = try sf.Sprite.createFromTexture(title_texture);

@@ -4,13 +4,13 @@ const sf = struct {
 };
 
 pub fn loadAll() !void {
-    house_texture = try sf.Texture.createFromFile("res/house.png");
+    house_texture = try sf.Texture.createFromFile("res/other/house.png");
     errdefer house_texture.destroy();
 
-    angerman_texture = try sf.Texture.createFromFile("res/angerman.png");
+    angerman_texture = try sf.Texture.createFromFile("res/entity/angerman.png");
     errdefer angerman_texture.destroy();
 
-    silverfish_texture = try sf.Texture.createFromFile("res/silverfish.png");
+    silverfish_texture = try sf.Texture.createFromFile("res/entity/silverfish.png");
     errdefer silverfish_texture.destroy();
 }
 

@@ -75,7 +75,7 @@ pub fn create(entity_type: Type, position: sf.Vector2f) !@This() {
     }
 
     new.shader = switch (entity_type) {
-        .Angerman => try sf.Shader.createFromMemory(null, null, @embedFile("anger_shader.fs")),
+        .Angerman => try sf.Shader.createFromFile(null, null, "res/shader/anger_shader.fs"),
         else => null,
     };
     errdefer {
