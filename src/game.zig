@@ -10,7 +10,8 @@ const atlas = @import("atlas.zig");
 const crt = @import("crt.zig");
 const gui = @import("gui.zig");
 const block_register = @import("block_register.zig");
-const entity_resources = @import("entity_resources.zig");
+const entity_resources = @import("entities/entity_resources.zig");
+const EC = @import("entities/entity_classes.zig");
 
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
@@ -56,12 +57,12 @@ pub fn init() !void {
     errdefer renderer.destroy();
     world = Terrain.init(&renderer);
     // Entities
-    try entity_resources.loadAll();
-    errdefer entity_resources.unloadAll();
+    try entity_resources.loadAllResources();
+    errdefer entity_resources.destroyAllRessources();
     entity_manager = EntityManager.init(allocator);
     errdefer entity_manager.deinit();
-    try entity_manager.entities.append(try Entity.create(.Decoration, .{ .x = 0, .y = 0 }));
-    try entity_manager.entities.append(try Entity.create(.Angerman, .{ .x = 96, .y = 512 }));
+    try entity_manager.entities.append(try Entity.create(EC.House, .{ .x = 0, .y = 0 }));
+    try entity_manager.entities.append(try Entity.create(EC.Angerman, .{ .x = 96, .y = 512 }));
     // Player
     player = try Player.create();
     errdefer player.destroy();
@@ -146,7 +147,7 @@ pub fn deinit() void {
     atlas.destroy();
     gui.deinit();
     renderer.destroy();
-    entity_resources.unloadAll();
+    entity_resources.destroyAllRessources();
     entity_manager.deinit();
     player.destroy();
     
