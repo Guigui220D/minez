@@ -2,5 +2,7 @@ csfml/
 zig-cache/
 .zig-cache/
 
+atlas.png
+
 NUL
 *.dll

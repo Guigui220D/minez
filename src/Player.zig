@@ -96,6 +96,10 @@ pub fn update(self: *@This(), delta: f32) void {
         self.doing = true;
         if (self.tryGoDown(delta))
             digging = true;
+    } else if (sf.keyboard.isKeyPressed(.Up)) {
+        self.doing = true;
+        self.digUp(delta);
+        digging = true;
     }
 
     if (!digging) {
@@ -223,6 +227,31 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
         return true;
     }
     return false;
+}
+
+/// Dig up (the player can't move up)
+fn digUp(self: *@This(), delta: f32) void {
+    _ = delta;
+    // Reset the horizontal position
+    self.hpos = std.math.round(self.hpos);
+
+    self.sprite.setRotation(90 * self.sprite.getScale().x);
+
+    const x: usize = @intFromFloat(self.hpos);
+    const block = game.world.getBlock(x, 7);
+    if (block.dig_time >= 0) {
+        // There's a block above
+        // Dig Up
+        if (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed > block.dig_time) {
+            self.breakBlock(x, 7);
+            _ = self.dig_clk.restart();
+        }
+
+        self.dig_sprite.setPosition(.{ .x = @floatFromInt(x * TerrainRenderer.QUAD_SIZE), .y = 256 - 32 });
+        self.dig_sprite.setColor(sf.Color.White);
+        const dig_stage: c_int = @intFromFloat((self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
+        self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
+    }
 }
 
 /// Break a block, show the score and update the score
