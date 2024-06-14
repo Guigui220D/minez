@@ -8,10 +8,11 @@ const gui = @import("gui.zig");
 
 const std = @import("std");
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.graphics;
-    usingnamespace sf.system;
-    usingnamespace sf.window;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
+    pub usingnamespace sfml.window;
 };
 
 hpos: f32,
@@ -127,7 +128,7 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
     // Scroll the whole terrain
     game.world.scroll(delta * 10);
 
-    const x = @floatToInt(usize, self.hpos);
+    const x: usize = @intFromFloat(self.hpos);
     const block = game.world.getBlock(x, 9);
     if (block.dig_time >= 0) {
         // There's a block below
@@ -139,9 +140,9 @@ fn tryGoDown(self: *@This(), delta: f32) bool {
             _ = self.dig_clk.restart();
         }
 
-        self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 + 32 });
+        self.dig_sprite.setPosition(.{ .x = @floatFromInt(x * TerrainRenderer.QUAD_SIZE), .y = 256 + 32 });
         self.dig_sprite.setColor(sf.Color.White);
-        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
+        const dig_stage: c_int = @intFromFloat((self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
         self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;
@@ -160,7 +161,7 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
 
     self.hpos += delta * 10;
 
-    const x = @floatToInt(usize, self.hpos + 1);
+    const x: usize = @intFromFloat(self.hpos + 1);
     if (x >= Terrain.WIDTH) {
         // Avoid going too far right
         self.hpos = std.math.round(self.hpos);
@@ -177,9 +178,9 @@ fn tryGoRight(self: *@This(), delta: f32) bool {
             _ = self.dig_clk.restart();
         }
 
-        self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 });
+        self.dig_sprite.setPosition(.{ .x = @floatFromInt(x * TerrainRenderer.QUAD_SIZE), .y = 256 });
         self.dig_sprite.setColor(sf.Color.White);
-        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
+        const dig_stage: c_int = @intFromFloat((self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
         self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;
@@ -204,7 +205,7 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
         return false;
     }
 
-    const x = @floatToInt(usize, self.hpos);
+    const x: usize = @intFromFloat(self.hpos);
     const block = game.world.getBlock(x, 8);
     if (block.dig_time >= 0) {
         // There's a block to the left
@@ -214,9 +215,9 @@ fn tryGoLeft(self: *@This(), delta: f32) bool {
             self.breakBlock(x, 8);
         }
 
-        self.dig_sprite.setPosition(.{ .x = @intToFloat(f32, x * TerrainRenderer.QUAD_SIZE), .y = 256 });
+        self.dig_sprite.setPosition(.{ .x = @floatFromInt(x * TerrainRenderer.QUAD_SIZE), .y = 256 });
         self.dig_sprite.setColor(sf.Color.White);
-        var dig_stage = @floatToInt(c_int, (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
+        const dig_stage: c_int = @intFromFloat((self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed / block.dig_time) * 4);
         self.dig_sprite.setTextureRect(.{ .left = 0, .top = dig_stage * 16, .width = 16, .height = 16 });
 
         return true;

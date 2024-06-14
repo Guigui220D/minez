@@ -32,7 +32,7 @@ pub fn Decoration(comptime texture_path: [:0]const u8) type {
         }
 
         pub fn prepareData() !Entity.SpecificData {
-            return Entity.SpecificData{ .Decoration = .{} };
+            return Entity.SpecificData{ .Decoration = void{} };
         }
     };
 }

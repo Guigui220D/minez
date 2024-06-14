@@ -1,8 +1,9 @@
 const std = @import("std");
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.graphics;
-    usingnamespace sf.system;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
 };
 
 const Entity = @import("../Entity.zig");

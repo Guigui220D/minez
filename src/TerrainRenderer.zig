@@ -7,9 +7,10 @@ const gui = @import("gui.zig");
 
 const std = @import("std");
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.graphics;
-    usingnamespace sf.system;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
 };
 
 pub const QUAD_SIZE = 32;
@@ -48,14 +49,14 @@ pub fn destroy(self: *@This()) void {
 pub fn updateVertices(self: *@This(), data: Terrain.DataT) void {
     const pslice = sf.Vertex.verticesAsPrimitives(&self.vdata, .Quads);
 
-    for (pslice) |*quad, i| {
+    for (pslice, 0..) |*quad, i| {
         const x = i % Terrain.WIDTH;
         const y = i / Terrain.WIDTH;
 
-        quad.a.position = sf.Vector2f{ .x = @intToFloat(f32, x + 0) * QUAD_SIZE, .y = @intToFloat(f32, y + 0) * QUAD_SIZE };
-        quad.b.position = sf.Vector2f{ .x = @intToFloat(f32, x + 1) * QUAD_SIZE, .y = @intToFloat(f32, y + 0) * QUAD_SIZE };
-        quad.c.position = sf.Vector2f{ .x = @intToFloat(f32, x + 1) * QUAD_SIZE, .y = @intToFloat(f32, y + 1) * QUAD_SIZE };
-        quad.d.position = sf.Vector2f{ .x = @intToFloat(f32, x + 0) * QUAD_SIZE, .y = @intToFloat(f32, y + 1) * QUAD_SIZE };
+        quad.a.position = sf.vector2f(@as(f32, @floatFromInt(x + 0)) * QUAD_SIZE, @as(f32, @floatFromInt(y + 0)) * QUAD_SIZE);
+        quad.b.position = sf.vector2f(@as(f32, @floatFromInt(x + 1)) * QUAD_SIZE, @as(f32, @floatFromInt(y + 0)) * QUAD_SIZE);
+        quad.c.position = sf.vector2f(@as(f32, @floatFromInt(x + 1)) * QUAD_SIZE, @as(f32, @floatFromInt(y + 1)) * QUAD_SIZE);
+        quad.d.position = sf.vector2f(@as(f32, @floatFromInt(x + 0)) * QUAD_SIZE, @as(f32, @floatFromInt(y + 1)) * QUAD_SIZE);
 
         const block = block_register.ALL_BLOCKS[data[y][x]];
         quad.a.tex_coords = block.text_a;

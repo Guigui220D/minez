@@ -1,7 +1,8 @@
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.system;
-    usingnamespace sf.graphics;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
 };
 
 const game = @import("game.zig");
@@ -18,7 +19,7 @@ pub const SpecificData = union {
 
 position: sf.Vector2f,
 sprite: sf.Sprite,
-updateFn: fn(self: *@This(), delta: f32) void,
+updateFn: *const fn (self: *@This(), delta: f32) void,
 data: SpecificData,
 shader: ?sf.Shader,
 active: bool,

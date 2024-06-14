@@ -1,8 +1,9 @@
 const std = @import("std");
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.graphics;
-    usingnamespace sf.system;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
 };
 
 const gui = @import("gui.zig");
@@ -35,11 +36,11 @@ pub fn create() !@This() {
 pub fn showScore(self: *@This(), pos: sf.Vector2f, score: i32) void {
     _ = self.clock.restart();
 
-    self.text.setStringFmt("{}", .{ score }) catch unreachable;
+    self.text.setStringFmt("{}", .{score}) catch unreachable;
     self.text.setPosition(pos.add(.{ .x = 0, .y = -30 }));
     self.rect.setPosition(pos.add(.{ .x = 0, .y = -30 }));
-    
-    var bounds = self.text.getGlobalBounds();
+
+    const bounds = self.text.getGlobalBounds();
     self.rect.setSize(.{ .x = bounds.width, .y = bounds.height });
 }
 

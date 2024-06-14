@@ -1,8 +1,9 @@
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.graphics;
-    usingnamespace sf.window;
-    usingnamespace sf.system;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
+    pub usingnamespace sfml.window;
 };
 const std = @import("std");
 
@@ -40,7 +41,7 @@ pub fn init() !void {
     errdefer _ = gpa.deinit();
     const allocator = gpa.allocator();
     // Random
-    prng = std.rand.DefaultPrng.init(@bitCast(u64, std.time.timestamp()));
+    prng = std.rand.DefaultPrng.init(@bitCast(std.time.timestamp()));
     random = prng.random();
     // Atlas builder
     {
@@ -121,7 +122,7 @@ pub fn run() void {
 
         // Update
         crt_shader.setUniform("distortion", @as(f32, global_clk.getElapsedTime().asSeconds() * 3));
-        var delta = std.math.min(clk.restart().asSeconds(), 0.04);
+        const delta = @min(clk.restart().asSeconds(), 0.04);
         gui.updateView(&crt_view);
         crt_screen.setView(crt_view);
 
@@ -150,7 +151,7 @@ pub fn deinit() void {
     entity_resources.destroyAllRessources();
     entity_manager.deinit();
     player.destroy();
-    
+
     window.destroy();
     crt_screen.destroy();
     crt_sprite.destroy();

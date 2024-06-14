@@ -8,8 +8,8 @@ pub fn main() !void {
 
     log.info("Initializing the game...", .{});
     try game.init();
-    log.info("Init finished in {}ms!", .{ init_clk.read() / time.ns_per_ms });
-    
+    log.info("Init finished in {}ms!", .{init_clk.read() / time.ns_per_ms});
+
     game.run();
 
     game.deinit();

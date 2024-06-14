@@ -1,8 +1,9 @@
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.graphics;
-    usingnamespace sf.window;
-    usingnamespace sf.system;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
+    pub usingnamespace sfml.window;
 };
 
 const crt = @import("crt.zig");
@@ -75,12 +76,11 @@ pub fn draw(target: anytype) void {
     } else {
         target.draw(title_sprite, null);
     }
-    
 }
 
 pub fn addScore(amount: i32) void {
     score += amount;
-    top_text.setStringFmt("Score: {}", .{ score} ) catch unreachable;
+    top_text.setStringFmt("Score: {}", .{score}) catch unreachable;
 }
 
 pub fn getScore() i32 {

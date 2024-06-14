@@ -1,29 +1,22 @@
-const Builder = @import("std").build.Builder;
+const std = @import("std");
+const sfml = @import("sfml");
 
-pub fn build(b: *Builder) void {
-    // Standard target options allows the person running `zig build` to choose
-    // what target to build for. Here we do not override the defaults, which
-    // means any target is allowed, and the default is native. Other options
-    // for restricting supported target set are available.
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
+    const mode = b.standardOptimizeOption(.{});
 
-    // Standard release options allow the person running `zig build` to select
-    // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
-    const mode = b.standardReleaseOptions();
+    const exe = b.addExecutable(.{
+        .name = "minez",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = mode,
+    });
 
-    const exe = b.addExecutable("minez", "src/main.zig");
-    exe.linkLibC();
-    exe.addPackagePath("sfml", "zig-sfml-wrapper/src/sfml/sfml.zig");
-    exe.addLibPath("csfml/lib/msvc/");
-    exe.linkSystemLibrary("csfml-graphics");
-    exe.linkSystemLibrary("csfml-system");
-    exe.linkSystemLibrary("csfml-window");
-    exe.linkSystemLibrary("csfml-audio");
-    exe.addIncludeDir("csfml/include/");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
-    exe.install();
+    const dep = b.dependency("sfml", .{}).module("sfml");
+    exe.root_module.addImport("sfml", dep);
+    sfml.link(exe);
 
+    const run = b.addRunArtifact(exe);
     const run_step = b.step("run", "Run the game");
-    run_step.dependOn(&exe.run().step);
+    run_step.dependOn(&run.step);
 }

@@ -2,9 +2,10 @@
 
 const std = @import("std");
 const sf = struct {
-    usingnamespace @import("sfml");
-    usingnamespace sf.graphics;
-    usingnamespace sf.system;
+    const sfml = @import("sfml");
+    pub usingnamespace sfml;
+    pub usingnamespace sfml.graphics;
+    pub usingnamespace sfml.system;
 };
 
 const TILE_SIZE = 16;
@@ -23,15 +24,7 @@ pub const Builder = struct {
 
     /// Creates a builder context
     pub fn start(allocator: std.mem.Allocator) !@This() {
-        var ret: @This() = .{
-            .rects = undefined,
-            .canvas = undefined,
-            .width = 1,
-            .height = 1,
-            .x = 0,
-            .y = 0,
-            .vertical = false
-        };
+        var ret: @This() = .{ .rects = undefined, .canvas = undefined, .width = 1, .height = 1, .x = 0, .y = 0, .vertical = false };
 
         ret.rects = AtlasDataT.init(allocator);
         errdefer ret.rects.deinit();
@@ -54,7 +47,7 @@ pub const Builder = struct {
             return ret;
 
         var buffer: [128]u8 = undefined;
-        var path = try std.fmt.bufPrintZ(&buffer, "res/block/{s}", .{name});
+        const path = try std.fmt.bufPrintZ(&buffer, "res/block/{s}", .{name});
 
         var tile = try sf.Texture.createFromFile(path);
         defer tile.destroy();
@@ -62,12 +55,7 @@ pub const Builder = struct {
         defer self.moveToNextTile();
         try self.resizeCanvasIfNeeded();
 
-        var choosen_place = sf.FloatRect{ 
-            .left = @intToFloat(f32, self.x * TILE_SIZE),
-            .top = @intToFloat(f32, self.y * TILE_SIZE),
-            .width = @as(f32, TILE_SIZE),
-            .height = @as(f32, TILE_SIZE)
-        };
+        const choosen_place = sf.FloatRect{ .left = @floatFromInt(self.x * TILE_SIZE), .top = @floatFromInt(self.y * TILE_SIZE), .width = @as(f32, TILE_SIZE), .height = @as(f32, TILE_SIZE) };
 
         var sprite = try sf.Sprite.createFromTexture(tile);
         defer sprite.destroy();
@@ -84,14 +72,13 @@ pub const Builder = struct {
         const needed_size = (sf.Vector2u{ .x = self.width, .y = self.height }).scale(TILE_SIZE);
 
         if (size.x < needed_size.x or size.y < needed_size.y) {
-            
             self.canvas.display();
             var cpy = try self.canvas.getTexture().copy();
             defer cpy.destroy();
 
             self.canvas.destroy();
             self.canvas = sf.RenderTexture.create(needed_size) catch @panic("idk");
-            
+
             var sprite = sf.Sprite.createFromTexture(cpy) catch @panic("idk");
             defer sprite.destroy();
 
