@@ -58,7 +58,7 @@ pub fn updateVertices(self: *@This(), data: Terrain.DataT) void {
         quad.c.position = sf.vector2f(@as(f32, @floatFromInt(x + 1)) * QUAD_SIZE, @as(f32, @floatFromInt(y + 1)) * QUAD_SIZE);
         quad.d.position = sf.vector2f(@as(f32, @floatFromInt(x + 0)) * QUAD_SIZE, @as(f32, @floatFromInt(y + 1)) * QUAD_SIZE);
 
-        const block = block_register.ALL_BLOCKS[data[y][x]];
+        const block = block_register.ALL_BLOCKS[data.items[y][x]];
         quad.a.tex_coords = block.text_a;
         quad.b.tex_coords = block.text_b;
         quad.c.tex_coords = block.text_c;

@@ -62,7 +62,8 @@ pub fn init() !void {
     // Terrain
     renderer = try TerrainRenderer.create();
     errdefer renderer.destroy();
-    world = Terrain.init(&renderer);
+    world = try Terrain.init(allocator, &renderer);
+    errdefer world.deinit();
     // Entities
     try entity_resources.loadAllResources();
     errdefer entity_resources.destroyAllRessources();
@@ -171,6 +172,7 @@ pub fn run() void {
 }
 
 pub fn deinit() void {
+    world.deinit();
     atlas.destroy();
     gui.deinit();
     renderer.destroy();
@@ -213,7 +215,7 @@ fn handleResized(size: sf.Vector2u) void {
         crt_window_view.viewport = sf.FloatRect.init(0, 0, 1, 1);
         window.setView(crt_window_view);
 
-        // CRT fills the screen
+        // CRT fills the screen, no background needed
         background_enabled = false;
     }
 }
