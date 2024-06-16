@@ -33,13 +33,18 @@ pub fn init(renderer: *TerrainRenderer) @This() {
     return new;
 }
 
-/// Scrolls down the terrain visually by a certain amount
+/// Scrolls the terrain visually by a certain amount
 pub fn scroll(self: *@This(), amount: f32) void {
     self.renderer.scroll += amount;
 
     while (self.renderer.scroll > 1.0) {
         self.renderer.scroll -= 1.0;
         self.shiftBlocks();
+    }
+
+    while (self.renderer.scroll < -1.0) {
+        self.renderer.scroll += 1.0;
+        //self.shiftBlocks();
     }
 }
 /// Resets the scroll if possible

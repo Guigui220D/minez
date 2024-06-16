@@ -34,6 +34,12 @@ var crt_screen: sf.RenderTexture = undefined;
 var crt_sprite: sf.Sprite = undefined;
 var crt_shader: sf.Shader = undefined;
 var crt_view: sf.View = undefined;
+var crt_window_view: sf.View = undefined;
+
+var background_enabled: bool = false;
+var background_view: sf.View = undefined;
+var background_sprite: sf.Sprite = undefined;
+var background_texture: sf.Texture = undefined;
 
 pub fn init() !void {
     // Allocator
@@ -69,10 +75,7 @@ pub fn init() !void {
     errdefer player.destroy();
     // Crt
     try initCrt();
-    errdefer window.destroy();
-    errdefer crt_screen.destroy();
-    errdefer crt_sprite.destroy();
-    errdefer crt_shader.destroy();
+    errdefer deinitCrt();
 }
 
 fn initCrt() !void {
@@ -100,6 +103,20 @@ fn initCrt() !void {
     crt_shader.setUniform("scanLineOpacity", sf.Vector2f{ .x = 0.5, .y = 0.2 });
     crt_shader.setUniform("brightness", @as(f32, 1.8));
     crt_shader.setUniform("distortion", @as(f32, 0));
+    // Background
+    background_texture = try sf.Texture.createFromFile("res/other/arcade.jpg");
+    errdefer background_texture.destroy();
+    background_sprite = try sf.Sprite.createFromTexture(background_texture);
+    errdefer background_sprite.destroy();
+}
+
+fn deinitCrt() void {
+    window.destroy();
+    crt_screen.destroy();
+    crt_sprite.destroy();
+    crt_shader.destroy();
+    background_texture.destroy();
+    background_sprite.destroy();
 }
 
 pub fn run() void {
@@ -116,6 +133,7 @@ pub fn run() void {
                     if (k.code == .Space)
                         gui.leaveTitle();
                 },
+                .resized => |s| handleResized(s.size),
                 else => continue,
             }
         }
@@ -130,6 +148,7 @@ pub fn run() void {
             player.update(delta);
             entity_manager.updateAll(delta);
         }
+
         // Draw crt
         crt_screen.clear(sf.Color.Black);
         renderer.draw(&crt_screen);
@@ -137,8 +156,15 @@ pub fn run() void {
         player.draw(&crt_screen);
         gui.draw(&crt_screen);
         crt_screen.display();
+
         // Render crt with shader
         window.clear(sf.Color.Black);
+        // Draw background
+        if (background_enabled) {
+            window.setView(background_view);
+            window.draw(background_sprite, .{});
+            window.setView(crt_window_view);
+        }
         window.draw(crt_sprite, .{ .shader = crt_shader });
         window.display();
     }
@@ -152,10 +178,42 @@ pub fn deinit() void {
     entity_manager.deinit();
     player.destroy();
 
-    window.destroy();
-    crt_screen.destroy();
-    crt_sprite.destroy();
-    crt_shader.destroy();
+    deinitCrt();
 
     _ = gpa.deinit();
+}
+
+fn handleResized(size: sf.Vector2u) void {
+    const size_f = sf.vector2f(@floatFromInt(size.x), @floatFromInt(size.y));
+    const ratio: f32 = size_f.x / size_f.y;
+    const ratio_goal: f32 = @as(f32, crt.WIDTH) / @as(f32, crt.HEIGHT);
+
+    if (ratio > ratio_goal * 1.1) {
+        // The window is too wide: add padding on the sides
+        const view_x = @as(f32, @floatFromInt(size.y)) * ratio_goal;
+        // Fix the viewport
+        const viewport_width = view_x / size_f.x;
+        const padding_required = 1 - viewport_width;
+        // Set it
+        crt_window_view = window.getView();
+        crt_window_view.viewport = sf.FloatRect.init(padding_required / 2, 0, viewport_width, 1);
+        window.setView(crt_window_view);
+
+        // Padding needs background
+        background_enabled = true;
+        background_view = sf.View.fromRect(sf.FloatRect.init(0, 0, 1, 1));
+        background_view.setSize(sf.vector2f(1920, 1920 / ratio));
+        background_view.setCenter(background_view.size.scale(0.5));
+    } else {
+        // The window is too high: crop the window
+        const view_y = @as(f32, @floatFromInt(size.x)) / ratio_goal;
+        // Snap the window dimensions to the aspect ratio
+        window.setSize(.{ .x = size.x, .y = @intFromFloat(view_y) });
+        crt_window_view = window.getView();
+        crt_window_view.viewport = sf.FloatRect.init(0, 0, 1, 1);
+        window.setView(crt_window_view);
+
+        // CRT fills the screen
+        background_enabled = false;
+    }
 }
