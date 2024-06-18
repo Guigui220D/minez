@@ -14,7 +14,7 @@ const sf = struct {
 };
 
 pub const QUAD_SIZE = 32;
-const vcount = 4 * Terrain.WIDTH * Terrain.HEIGHT;
+const vcount = 4 * Terrain.WIDTH * Terrain.MIN_HEIGHT;
 
 buffer: sf.VertexBuffer,
 vdata: [vcount]sf.Vertex,

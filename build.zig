@@ -12,8 +12,8 @@ pub fn build(b: *std.Build) void {
         .optimize = mode,
     });
 
-    const dep = b.dependency("sfml", .{}).module("sfml");
-    exe.root_module.addImport("sfml", dep);
+    exe.root_module.addImport("sfml", b.dependency("sfml", .{}).module("sfml"));
+    exe.root_module.addImport("wfc", b.dependency("wfc", .{}).module("wfc"));
     sfml.link(exe);
 
     const run = b.addRunArtifact(exe);

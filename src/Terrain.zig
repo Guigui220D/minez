@@ -9,7 +9,7 @@ const TerrainRenderer = @import("TerrainRenderer.zig");
 const EntityManager = @import("EntityManager.zig");
 
 pub const WIDTH = 12;
-pub const HEIGHT = 20;
+pub const MIN_HEIGHT = 20;
 
 // Terrain data
 pub const LayerT = [WIDTH]u8;
@@ -26,11 +26,11 @@ pub fn init(alloc: std.mem.Allocator, renderer: *TerrainRenderer) !@This() {
     // Reset depth
     new.depth = 0;
     // Alloc the terrain
-    new.terrain = try DataT.initCapacity(alloc, HEIGHT);
+    new.terrain = try DataT.initCapacity(alloc, MIN_HEIGHT);
     errdefer new.terrain.deinit();
     // Generate each layer
-    for (0..HEIGHT) |i|
-        new.generateLayer(i);
+    while (new.terrain.items.len < MIN_HEIGHT)
+        new.generateSomeLayers();
 
     renderer.updateVertices(new.terrain);
 
@@ -76,17 +76,19 @@ fn shiftBlocks(self: *@This()) void {
     // Fill in deepest layer
     self.depth += 1;
     self.renderer.depth += 1;
-    self.generateLayer(HEIGHT - 1);
+
+    if (self.terrain.items.len < MIN_HEIGHT)
+        self.generateSomeLayers();
 
     // Update renderer
     self.renderer.updateVertices(self.terrain);
 }
 
-/// Generates a new layer of terrain
-pub fn generateLayer(self: *@This(), layer: usize) void {
+/// Generates a few or one layer of terrain
+pub fn generateSomeLayers(self: *@This()) void {
     const rand = @import("game.zig").random;
     // Generate a layer (overrides data)
-    const y = layer + self.depth;
+    const y = self.terrain.items.len + self.depth;
 
     // TODO: Make actual generation
     var new_layer: LayerT = undefined;
