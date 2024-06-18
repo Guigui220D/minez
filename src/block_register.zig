@@ -3,18 +3,25 @@ const std = @import("std");
 const Block = @import("Block.zig");
 const atlas = @import("atlas.zig");
 
-pub var ALL_BLOCKS = [_]Block{ AIR, DIRT, STONE1, STONE2, STONE3, STONE4, IRON, GOLD, DIAMOND, STRONK };
+pub var ALL_BLOCKS = blk: {
+    const blocks = @import("blocks/blocks.zig");
+    const block_decls = @typeInfo(blocks).Struct.decls;
 
-pub const AIR = Block{ .dig_time = -1, .texture_name = "air.png" };
-pub const DIRT = Block{ .dig_time = 0.2, .texture_name = "dirt.png" };
-pub const STONE1 = Block{ .dig_time = 0.5, .texture_name = "stone1.png" };
-pub const STONE2 = Block{ .dig_time = 0.6, .texture_name = "stone2.png" };
-pub const STONE3 = Block{ .dig_time = 0.9, .texture_name = "stone3.png" };
-pub const STONE4 = Block{ .dig_time = 1.2, .texture_name = "stone4.png" };
-pub const IRON = Block{ .dig_time = 0.6, .texture_name = "iron.png", .score = 100 };
-pub const GOLD = Block{ .dig_time = 0.7, .texture_name = "gold.png", .score = 200 };
-pub const DIAMOND = Block{ .dig_time = 1, .texture_name = "diamond.png", .score = 400 };
-pub const STRONK = Block{ .dig_time = std.math.floatMax(f32), .texture_name = "stronk.png" };
+    var ret: [block_decls.len]Block = undefined;
+
+    for (block_decls, 0..) |block, i| {
+        const decl = @field(blocks, block.name);
+
+        ret[i].name = block.name;
+        ret[i].dig_time = decl.dig_time;
+        ret[i].texture_name = decl.texture;
+
+        if (@hasDecl(decl, "score"))
+            ret[i].score = decl.score;
+    }
+
+    break :blk ret;
+};
 
 pub fn loadAllBlockTextures(builder: *atlas.Builder) !void {
     for (&ALL_BLOCKS) |*block| {

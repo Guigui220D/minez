@@ -86,7 +86,7 @@ fn shiftBlocks(self: *@This()) void {
 
 /// Generates a few or one layer of terrain
 pub fn generateSomeLayers(self: *@This()) void {
-    const rand = @import("game.zig").random;
+    //const rand = @import("game.zig").random;
     // Generate a layer (overrides data)
     const y = self.terrain.items.len + self.depth;
 
@@ -95,22 +95,8 @@ pub fn generateSomeLayers(self: *@This()) void {
     for (&new_layer) |*val| {
         if (y < 9) {
             val.* = 0;
-        } else if (y <= 11) {
-            val.* = 1;
         } else {
-            const stone_id: u8 = @intFromFloat(std.math.clamp(rand.floatNorm(f32) * 0.5 + (@as(f32, @floatFromInt(y)) / 50), 0, 4));
-            val.* = stone_id + 1;
-
-            if (rand.float(f32) < (5.0 / 100.0)) {
-                val.* = 6;
-            } else if (y > 100) {
-                if (rand.float(f32) < (4.0 / 100.0)) {
-                    val.* = 7;
-                } else if (y > 200) {
-                    if (rand.float(f32) < (3.0 / 100.0))
-                        val.* = 8;
-                }
-            }
+            val.* = 1;
         }
     }
 
