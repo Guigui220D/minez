@@ -68,10 +68,10 @@ pub const WfcChunk = struct {
         if (ptr.* == .impossible)
             return;
 
-        const wr = self.getWeights(x + 1, y, false);
-        const wl = self.getWeights(x - 1, y, false);
-        const wd = self.getWeights(x, y + 1, true);
-        const wu = self.getWeights(x, y - 1, true);
+        const wr = self.getWeights(x + 1, y);
+        const wl = self.getWeights(x - 1, y);
+        const wd = self.getWeights(x, y + 1);
+        const wu = self.getWeights(x, y - 1);
 
         var choices = default_weights;
         mulInPlace(&choices, wr);
@@ -92,7 +92,7 @@ pub const WfcChunk = struct {
     }
 
     // TODO: actual way to tell direction instead of v bool
-    fn getWeights(self: WfcChunk, x: isize, y: isize, v: bool) ?ChoicesT {
+    fn getWeights(self: WfcChunk, x: isize, y: isize) ?ChoicesT {
         //std.debug.print("x: {}, y: {}\n", .{ x, y });
         if (x < 0 or x >= Terrain.WIDTH)
             return null;
@@ -108,17 +108,13 @@ pub const WfcChunk = struct {
             const layer = self.terrain.terrain.getLast();
             const b = layer[@intCast(x)];
 
-            if (v) {
-                return block_reg.ALL_BLOCKS[b].wfc_vertical;
-            } else return block_reg.ALL_BLOCKS[b].wfc_horizontal;
+            return block_reg.ALL_BLOCKS[b].wfc;
         } else {
             const wfcb = self.blocks.buffer[@intCast(y)][@intCast(x)];
             if (wfcb != .decided)
                 return null;
             // Get decided block from the WFC chunk
-            if (v) {
-                return block_reg.ALL_BLOCKS[wfcb.decided].wfc_vertical;
-            } else return block_reg.ALL_BLOCKS[wfcb.decided].wfc_horizontal;
+            return block_reg.ALL_BLOCKS[wfcb.decided].wfc;
         }
     }
 

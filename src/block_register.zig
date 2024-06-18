@@ -21,14 +21,13 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
 
         if (@hasDecl(decl, "score"))
             ret[i].score = decl.score;
+
+        ret[i].wfc = Block.default_weights;
     }
 
     // Assign the WFC weights
     for (block_decls, 0..) |block, i| {
         const decl = @field(blocks, block.name);
-
-        ret[i].wfc_horizontal = Block.default_weights;
-        ret[i].wfc_vertical = Block.default_weights;
 
         if (@hasDecl(decl, "wfc")) {
             const wfc = decl.wfc;
@@ -48,8 +47,11 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
                             break j;
                     } else @panic("Block with name " ++ name ++ " doesn't exist");
 
-                    ret[i].wfc_horizontal[id] = wvalue;
-                    ret[i].wfc_vertical[id] = wvalue;
+                    if (ret[i].wfc[id] != 1.0 or ret[id].wfc[i] != 1.0)
+                        @compileLog("Warning: Neighbors " ++ ret[i].name ++ " and " ++ ret[id].name ++ " have redundant weights!");
+
+                    ret[i].wfc[id] *= wvalue;
+                    ret[id].wfc[i] *= wvalue;
                 }
             }
         }

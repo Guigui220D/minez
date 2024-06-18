@@ -10,8 +10,7 @@ texture_name: [:0]const u8,
 score: i32 = 0,
 
 // WFC weights
-wfc_horizontal: WFCWeights,
-wfc_vertical: WFCWeights,
+wfc: WFCWeights,
 
 text_a: Vector2f = undefined,
 text_b: Vector2f = undefined,
