@@ -1,21 +1,27 @@
 const std = @import("std");
 const wfc = @import("wfc");
 
-const Terrain = @import("../terrain.zig");
+const Terrain = @import("../Terrain.zig");
 const block_reg = @import("../block_register.zig");
 
+// TODO: normalize this format in the lib
 const ChoicesT = [block_reg.BLOCK_COUNT]f64;
+pub const default_weights = [1]f64{1.0} ** block_reg.BLOCK_COUNT;
 
 pub const WfcChunk = struct {
+    pub const HEIGHT = 3;
     rand: std.Random,
-    blocks: std.BoundedArray(WfcBlockRow, 3),
+    blocks: std.BoundedArray(WfcBlockRow, HEIGHT),
+    terrain: *Terrain,
 
-    pub fn init(rand: std.Random) WfcChunk {
+    pub fn init(rand: std.Random, terrain: *Terrain) WfcChunk {
         var ret: WfcChunk = undefined;
         ret.rand = rand;
-        ret.blocks = std.BoundedArray(WfcBlockRow, 3).init(0);
+        ret.blocks = std.BoundedArray(WfcBlockRow, HEIGHT).init(0) catch unreachable;
+        ret.terrain = terrain;
 
-        ret.blocks.appendNTimes(defaultRow, 3) catch unreachable;
+        ret.blocks.appendNTimes(defaultRow, HEIGHT) catch unreachable;
+        ret.prepareAll();
 
         return ret;
     }
@@ -34,46 +40,120 @@ pub const WfcChunk = struct {
         const collapsed = self.blocks.orderedRemove(0);
         self.blocks.append(defaultRow) catch unreachable;
 
+        self.prepareAll();
+
         return wfcRowToBlockLayer(collapsed);
     }
 
-    pub fn prepareAll(self: *WfcChunk) !void {
-        for (self.blocks.buffer) |layer| {
-            for (layer) |*wfc_block| {
+    pub fn prepareAll(self: *WfcChunk) void {
+        for (self.blocks.buffer, 0..) |layer, y| {
+            for (layer, 0..) |wfc_block, x| {
                 if (wfc_block == .not_ready) {
-                    // TODO: update its options
+                    // Update the choices of the unready block
+                    updateChoices(self, @intCast(x), @intCast(y));
                 }
             }
         }
     }
+
+    fn updateChoices(self: *WfcChunk, x: isize, y: isize) void {
+        if (x < 0 or x >= Terrain.WIDTH)
+            return;
+        if (y < 0 or y >= HEIGHT)
+            return;
+
+        const ptr = &self.blocks.buffer[@intCast(y)][@intCast(x)];
+        if (ptr.* == .decided)
+            return;
+        if (ptr.* == .impossible)
+            return;
+
+        const wr = self.getWeights(x + 1, y, false);
+        const wl = self.getWeights(x - 1, y, false);
+        const wd = self.getWeights(x, y + 1, true);
+        const wu = self.getWeights(x, y - 1, true);
+
+        var choices = default_weights;
+        mulInPlace(&choices, wr);
+        mulInPlace(&choices, wl);
+        mulInPlace(&choices, wd);
+        mulInPlace(&choices, wu);
+
+        wfc.normalize(&choices) catch unreachable;
+        ptr.* = WfcBlock{ .undecided = choices };
+    }
+
+    // TODO: move to lib
+    fn mulInPlace(a: *ChoicesT, b: ?ChoicesT) void {
+        if (b) |c| {
+            for (a, c) |*aa, cc|
+                aa.* *= cc;
+        }
+    }
+
+    // TODO: actual way to tell direction instead of v bool
+    fn getWeights(self: WfcChunk, x: isize, y: isize, v: bool) ?ChoicesT {
+        //std.debug.print("x: {}, y: {}\n", .{ x, y });
+        if (x < 0 or x >= Terrain.WIDTH)
+            return null;
+        if (y >= HEIGHT)
+            return null;
+        if (y < 0) {
+            std.debug.assert(y == -1);
+            //std.debug.print("{p}\n", .{&self.terrain.terrain.items});
+            // Get decided block from the terrain
+            if (self.terrain.terrain.items.len == 0)
+                return null;
+
+            const layer = self.terrain.terrain.getLast();
+            const b = layer[@intCast(x)];
+
+            if (v) {
+                return block_reg.ALL_BLOCKS[b].wfc_vertical;
+            } else return block_reg.ALL_BLOCKS[b].wfc_horizontal;
+        } else {
+            const wfcb = self.blocks.buffer[@intCast(y)][@intCast(x)];
+            if (wfcb != .decided)
+                return null;
+            // Get decided block from the WFC chunk
+            if (v) {
+                return block_reg.ALL_BLOCKS[wfcb.decided].wfc_vertical;
+            } else return block_reg.ALL_BLOCKS[wfcb.decided].wfc_horizontal;
+        }
+    }
+
+    // TODO: use vectors
 
     pub fn collapse(self: *WfcChunk) !void {
         // Find the block of lowest entropy
         // TODO: keep track of *several* blocks of least entropy and choose at random
         var min_entropy: f64 = std.math.floatMax(f64);
-        var min_block: ?*WfcBlock = null;
-        for (self.blocks.buffer) |layer| {
-            for (layer) |*wfc_block| {
-                if (wfc_block == .decided)
+        var min_x: isize = undefined;
+        var min_y: isize = undefined;
+        for (self.blocks.buffer, 0..) |layer, y| {
+            for (&layer, 0..) |*wfc_block, x| {
+                if (wfc_block.* == .decided)
                     continue;
-                const h = wfc_block.getEntropy();
+                const h = try wfc_block.getEntropy();
                 if (h < min_entropy) {
                     min_entropy = h;
-                    min_block = wfc_block;
+                    min_x = @intCast(x);
+                    min_y = @intCast(y);
                 }
             }
         }
 
-        if (min_block) |block| {
-            // Collapse the selected block
-            const ret = block.choose(self.rand);
-            // At this point collapse should always succeed (the selected block has to be an undecided)
-            std.debug.assert(ret);
+        // Collapse the selected block
+        const ret = try self.blocks.buffer[@intCast(min_y)][@intCast(min_x)].choose(self.rand);
+        // At this point collapse should always succeed (the selected block has to be an undecided)
+        //std.debug.assert(ret);
+        _ = ret;
 
-            // TODO: update neighbor's options
-        } else {
-            return error.FullyCollapsed;
-        }
+        // Update neighbor's options
+        updateChoices(self, min_x + 1, min_y);
+        updateChoices(self, min_x - 1, min_y);
+        updateChoices(self, min_x, min_y + 1);
+        updateChoices(self, min_x, min_y - 1);
     }
 
     // Needs a fully collapsed row
@@ -85,36 +165,35 @@ pub const WfcChunk = struct {
         return ret;
     }
 
-    const defaultRow: WfcBlock = [_]WfcBlock{.{.not_ready}} ** Terrain.WIDTH;
+    const defaultRow = [_]WfcBlock{WfcBlock{ .not_ready = void{} }} ** Terrain.WIDTH;
 };
 
 pub const WfcBlockRow = [Terrain.WIDTH]WfcBlock;
 
 pub const WfcBlock = union(enum) {
     not_ready: void,
-    undecided: struct {
-        choices: ChoicesT,
-    },
+    undecided: ChoicesT,
     decided: u8,
     impossible: void,
 
     pub fn getEntropy(self: WfcBlock) !f64 {
         return switch (self) {
             .not_ready => |_| error.NotReady,
-            .undecided => |s| wfc.entropy(s.choices),
+            .undecided => |s| wfc.entropy(&s),
             .decided => |_| 0.0,
             .impossible => |_| error.Impossible,
         };
     }
 
-    pub fn choose(self: WfcBlock, rand: std.Random) bool {
+    pub fn choose(self: *WfcBlock, rand: std.Random) !bool {
         if (self.* != .undecided)
             return false;
 
-        const buf: [@sizeOf(ChoicesT) * 2]u8 = undefined;
-        const alloc = std.heap.FixedBufferAllocator.init(buf);
+        var buf: [@sizeOf(ChoicesT) * 2]u8 = undefined;
+        var fba = std.heap.FixedBufferAllocator.init(&buf);
+        const alloc = fba.allocator();
 
-        const result = wfc.pick(rand, alloc, self.undecided.choices);
+        const result = try wfc.pick(rand, alloc, &self.undecided);
         self.* = WfcBlock{ .decided = @intCast(result) };
 
         return true;

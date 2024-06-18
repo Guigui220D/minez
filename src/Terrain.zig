@@ -7,6 +7,8 @@ const gui = @import("gui.zig");
 const Block = @import("Block.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
 const EntityManager = @import("EntityManager.zig");
+const wfc = @import("wfc/wfc_block.zig");
+const game = @import("game.zig");
 
 pub const WIDTH = 12;
 pub const MIN_HEIGHT = 20;
@@ -17,6 +19,7 @@ pub const DataT = std.ArrayList(LayerT);
 terrain: DataT,
 depth: usize = 0,
 renderer: *TerrainRenderer,
+wfc_gen: wfc.WfcChunk,
 
 /// Initializes the terrain, generates all layers
 pub fn init(alloc: std.mem.Allocator, renderer: *TerrainRenderer) !@This() {
@@ -28,13 +31,16 @@ pub fn init(alloc: std.mem.Allocator, renderer: *TerrainRenderer) !@This() {
     // Alloc the terrain
     new.terrain = try DataT.initCapacity(alloc, MIN_HEIGHT);
     errdefer new.terrain.deinit();
-    // Generate each layer
-    while (new.terrain.items.len < MIN_HEIGHT)
-        new.generateSomeLayers();
-
-    renderer.updateVertices(new.terrain);
 
     return new;
+}
+
+pub fn genSome(self: *@This()) void {
+    // Generate each layer
+    while (self.terrain.items.len < MIN_HEIGHT)
+        self.generateSomeLayers();
+
+    self.renderer.updateVertices(self.terrain);
 }
 
 pub fn deinit(self: *@This()) void {
@@ -88,17 +94,13 @@ fn shiftBlocks(self: *@This()) void {
 pub fn generateSomeLayers(self: *@This()) void {
     //const rand = @import("game.zig").random;
     // Generate a layer (overrides data)
-    const y = self.terrain.items.len + self.depth;
+    //const y = self.terrain.items.len + self.depth;
+
+    while (!self.wfc_gen.isReady())
+        self.wfc_gen.collapse() catch unreachable;
 
     // TODO: Make actual generation
-    var new_layer: LayerT = undefined;
-    for (&new_layer) |*val| {
-        if (y < 9) {
-            val.* = 0;
-        } else {
-            val.* = 1;
-        }
-    }
+    const new_layer = self.wfc_gen.popLayer();
 
     self.terrain.append(new_layer) catch @panic("Couldn't alloc new layers! OOM");
 }

@@ -14,6 +14,8 @@ const block_register = @import("block_register.zig");
 const entity_resources = @import("entities/entity_resources.zig");
 const EC = @import("entities/entity_classes.zig");
 
+const wfc = @import("wfc/wfc_block.zig");
+
 const Terrain = @import("Terrain.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
 const Player = @import("Player.zig");
@@ -64,6 +66,10 @@ pub fn init() !void {
     errdefer renderer.destroy();
     world = try Terrain.init(allocator, &renderer);
     errdefer world.deinit();
+
+    world.wfc_gen = wfc.WfcChunk.init(random, &world);
+    world.genSome();
+
     // Entities
     try entity_resources.loadAllResources();
     errdefer entity_resources.destroyAllRessources();

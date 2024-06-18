@@ -102,6 +102,9 @@ pub fn update(self: *@This(), delta: f32) void {
         digging = true;
     }
 
+    // TODO: temporary to block the baddie
+    self.doing = false;
+
     if (!digging) {
         _ = self.dig_clk.restart();
         self.dig_sprite.setColor(sf.Color.Transparent);

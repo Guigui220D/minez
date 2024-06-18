@@ -1,6 +1,11 @@
 pub const air = struct {
     pub const dig_time = -1.0;
     pub const texture = "air.png";
+    pub const wfc = struct {
+        pub const any = struct {
+            pub const self = 3;
+        };
+    };
 };
 
 pub const dirt = struct {
@@ -28,7 +33,7 @@ pub const iron = struct {
     pub const texture = "iron.png";
     pub const wfc = struct {
         pub const any = struct {
-            pub const self = 2;
+            pub const self = 3;
         };
     };
 };
