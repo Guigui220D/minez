@@ -68,16 +68,24 @@ pub const WfcChunk = struct {
         if (ptr.* == .impossible)
             return;
 
-        const wr = self.getWeights(x + 1, y);
-        const wl = self.getWeights(x - 1, y);
-        const wd = self.getWeights(x, y + 1);
-        const wu = self.getWeights(x, y - 1);
+        const wr = self.getWeights(x + 1, y, "left");
+        const wl = self.getWeights(x - 1, y, "right");
+        const wd = self.getWeights(x, y + 1, "up");
+        const wu = self.getWeights(x, y - 1, "down");
+        const wru = self.getWeights(x + 1, y - 1, "diagdown");
+        const wrd = self.getWeights(x + 1, y + 1, "diagup");
+        const wlu = self.getWeights(x - 1, y - 1, "diagdown");
+        const wld = self.getWeights(x - 1, y + 1, "diagup");
 
         var choices = default_weights;
         mulInPlace(&choices, wr);
         mulInPlace(&choices, wl);
         mulInPlace(&choices, wd);
         mulInPlace(&choices, wu);
+        mulInPlace(&choices, wru);
+        mulInPlace(&choices, wrd);
+        mulInPlace(&choices, wlu);
+        mulInPlace(&choices, wld);
 
         wfc.normalize(&choices) catch unreachable;
         ptr.* = WfcBlock{ .undecided = choices };
@@ -92,7 +100,7 @@ pub const WfcChunk = struct {
     }
 
     // TODO: actual way to tell direction instead of v bool
-    fn getWeights(self: WfcChunk, x: isize, y: isize) ?ChoicesT {
+    fn getWeights(self: WfcChunk, x: isize, y: isize, comptime group: []const u8) ?ChoicesT {
         //std.debug.print("x: {}, y: {}\n", .{ x, y });
         if (x < 0 or x >= Terrain.WIDTH)
             return null;
@@ -108,13 +116,13 @@ pub const WfcChunk = struct {
             const layer = self.terrain.terrain.getLast();
             const b = layer[@intCast(x)];
 
-            return block_reg.ALL_BLOCKS[b].wfc;
+            return @field(block_reg.ALL_BLOCKS[b], "wfc_" ++ group);
         } else {
             const wfcb = self.blocks.buffer[@intCast(y)][@intCast(x)];
             if (wfcb != .decided)
                 return null;
             // Get decided block from the WFC chunk
-            return block_reg.ALL_BLOCKS[wfcb.decided].wfc;
+            return @field(block_reg.ALL_BLOCKS[wfcb.decided], "wfc_" ++ group);
         }
     }
 

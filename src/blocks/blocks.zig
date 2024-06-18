@@ -61,3 +61,17 @@ pub const iron = struct {
         };
     };
 };
+
+pub const stronk = struct {
+    pub const dig_time = 3;
+    pub const texture = "stronk.png";
+    pub const score = 100;
+    pub const wfc = struct {
+        pub const any = struct {
+            pub const self = 2.0;
+        };
+        pub const diag = struct {
+            pub const self = 0;
+        };
+    };
+};

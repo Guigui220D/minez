@@ -6,6 +6,7 @@ const atlas = @import("atlas.zig");
 pub const BLOCK_COUNT: usize = @typeInfo(@import("blocks/blocks.zig")).Struct.decls.len;
 
 pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
+    const groups = @import("groups.zig");
     const blocks = @import("blocks/blocks.zig");
     const block_decls = @typeInfo(blocks).Struct.decls;
 
@@ -22,7 +23,8 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
         if (@hasDecl(decl, "score"))
             ret[i].score = decl.score;
 
-        ret[i].wfc = Block.default_weights;
+        for (groups.any) |class|
+            @field(ret[i], "wfc_" ++ class) = Block.default_weights;
     }
 
     // Assign the WFC weights
@@ -31,12 +33,16 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
 
         if (@hasDecl(decl, "wfc")) {
             const wfc = decl.wfc;
-            if (@hasDecl(wfc, "any")) {
-                const weights = wfc.any;
-                for (@typeInfo(weights).Struct.decls) |weight| {
+            for (@typeInfo(wfc).Struct.decls) |group_decl| {
+                const group = @field(wfc, group_decl.name);
+
+                if (!@hasDecl(groups, group_decl.name))
+                    @compileError("Unknown weight group: " ++ group_decl.name);
+
+                for (@typeInfo(group).Struct.decls) |weight| {
                     var name = weight.name;
 
-                    const wvalue: f64 = @field(weights, name);
+                    const wvalue: f64 = @field(group, name);
 
                     if (std.ascii.eqlIgnoreCase("self", name))
                         name = block.name;
@@ -47,11 +53,15 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
                             break j;
                     } else @panic("Block with name " ++ name ++ " doesn't exist");
 
-                    if (ret[i].wfc[id] != 1.0 or ret[id].wfc[i] != 1.0)
-                        @compileLog("Warning: Neighbors " ++ ret[i].name ++ " and " ++ ret[id].name ++ " have redundant weights!");
+                    for (@field(groups, group_decl.name)) |weight_vec| {
+                        const full_name = "wfc_" ++ weight_vec;
 
-                    ret[i].wfc[id] *= wvalue;
-                    ret[id].wfc[i] *= wvalue;
+                        //if (@field(ret[i], full_name)[id] != 1.0 or @field(ret[id], full_name)[i] != 1.0)
+                        //    @compileError("Neighbors " ++ ret[i].name ++ " and " ++ ret[id].name ++ " have redundant weights!");
+
+                        @field(ret[i], full_name)[id] *= wvalue;
+                        @field(ret[id], full_name)[i] *= wvalue;
+                    }
                 }
             }
         }
