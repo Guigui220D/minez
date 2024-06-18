@@ -4,7 +4,7 @@ const wfc = @import("wfc");
 const Terrain = @import("../terrain.zig");
 const block_reg = @import("../block_register.zig");
 
-const ChoicesT = [block_reg.ALL_BLOCKS.len]f64;
+const ChoicesT = [block_reg.BLOCK_COUNT]f64;
 
 pub const WfcChunk = struct {
     rand: std.Random,
