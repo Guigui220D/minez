@@ -5,7 +5,7 @@ const Terrain = @import("../Terrain.zig");
 const block_reg = @import("../block_register.zig");
 
 // TODO: normalize this format in the lib
-const ChoicesT = [block_reg.BLOCK_COUNT]f64;
+pub const ChoicesT = [block_reg.BLOCK_COUNT]f64;
 pub const default_weights = [1]f64{1.0} ** block_reg.BLOCK_COUNT;
 
 pub const WfcChunk = struct {
@@ -77,7 +77,8 @@ pub const WfcChunk = struct {
         const wlu = self.getWeights(x - 1, y - 1, "diagdown");
         const wld = self.getWeights(x - 1, y + 1, "diagup");
 
-        var choices = default_weights;
+        var choices = self.terrain.getWfcContextualWeights();
+
         mulInPlace(&choices, wr);
         mulInPlace(&choices, wl);
         mulInPlace(&choices, wd);
@@ -87,7 +88,11 @@ pub const WfcChunk = struct {
         mulInPlace(&choices, wlu);
         mulInPlace(&choices, wld);
 
-        wfc.normalize(&choices) catch unreachable;
+        wfc.normalize(&choices) catch {
+            // Temporary: force the error block
+            choices[1] = 1.0;
+            std.debug.print("No solution for block gen!\n", .{});
+        };
         ptr.* = WfcBlock{ .undecided = choices };
     }
 

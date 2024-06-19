@@ -2,7 +2,7 @@
 // No rendering here
 
 const std = @import("std");
-const block_register = @import("block_register.zig");
+const br = @import("block_register.zig");
 const gui = @import("gui.zig");
 const Block = @import("Block.zig");
 const TerrainRenderer = @import("TerrainRenderer.zig");
@@ -23,6 +23,7 @@ wfc_gen: wfc.WfcChunk,
 
 /// Initializes the terrain, generates all layers
 pub fn init(alloc: std.mem.Allocator, renderer: *TerrainRenderer) !@This() {
+    //std.debug.print("{any}\n", .{br.ALL_BLOCKS});
     var new: @This() = undefined;
 
     new.renderer = renderer;
@@ -99,10 +100,38 @@ pub fn generateSomeLayers(self: *@This()) void {
     while (!self.wfc_gen.isReady())
         self.wfc_gen.collapse() catch unreachable;
 
-    // TODO: Make actual generation
     const new_layer = self.wfc_gen.popLayer();
 
     self.terrain.append(new_layer) catch @panic("Couldn't alloc new layers! OOM");
+}
+
+pub fn getBottomY(self: @This()) usize {
+    return self.depth + self.terrain.items.len;
+}
+
+fn only(comptime name: []const u8) wfc.ChoicesT {
+    var zeros = [1]f64{0.0} ** (br.BLOCK_COUNT);
+    zeros[@intFromEnum(@field(br.BLOCK_NAMES, name))] = 1.0;
+    return zeros;
+}
+
+pub fn getWfcContextualWeights(self: @This()) wfc.ChoicesT {
+    const y = self.getBottomY();
+
+    var ret = wfc.default_weights;
+    ret[@intFromEnum(br.BLOCK_NAMES.err_block)] = 0;
+
+    if (y < 9)
+        return only("air");
+
+    if (y < 11)
+        return only("dirt");
+
+    //ret[@intFromEnum(br.BLOCK_NAMES.err_block)]
+
+    return ret;
+
+    //const stone_id: u8 = @intFromFloat(std.math.clamp(rand.floatNorm(f32) * 0.5 + (@as(f32, @floatFromInt(y)) / 50), 0, 4));
 }
 
 /// Sets a block at the given position
@@ -114,5 +143,5 @@ pub fn setBlock(self: *@This(), x: usize, y: usize, block: u8) void {
 }
 
 pub fn getBlock(self: @This(), x: usize, y: usize) Block {
-    return block_register.ALL_BLOCKS[self.terrain.items[y][x]];
+    return br.ALL_BLOCKS[self.terrain.items[y][x]];
 }
