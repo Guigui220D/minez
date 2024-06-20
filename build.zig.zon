@@ -28,8 +28,8 @@
             .hash = "1220c7e12ea2d543a341a846418d515bf308fa12fde0856943c5567d8e6a2864d9aa",
         },
         .wfc = .{
-            .url = "https://github.com/Guigui220D/wfc/archive/ea87e01a39e06994fb2e0c869b87a60bc070885b.tar.gz",
-            .hash = "12202359c09bacf0b48d4a5a9b6798bce8cf1081478d9116b62064f10427b4493532",
+            .url = "https://github.com/Guigui220D/wfc/archive/b9ae0237e48fcffc6ae2f2b74a5c33cde0669561.tar.gz",
+            .hash = "12203420856aa2e69765d9dec6f32114ff4c3855f3dd2f7430113f9b7964b5964e64",
         },
     },
     .paths = .{

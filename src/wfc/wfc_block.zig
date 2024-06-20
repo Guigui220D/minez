@@ -1,12 +1,9 @@
 const std = @import("std");
-const wfc = @import("wfc");
+
+pub const wfc = @import("wfc").Wfc(block_reg.BLOCK_COUNT, f64);
 
 const Terrain = @import("../Terrain.zig");
 const block_reg = @import("../block_register.zig");
-
-// TODO: normalize this format in the lib
-pub const ChoicesT = [block_reg.BLOCK_COUNT]f64;
-pub const default_weights = [1]f64{1.0} ** block_reg.BLOCK_COUNT;
 
 pub const WfcChunk = struct {
     pub const HEIGHT = 3;
@@ -79,33 +76,28 @@ pub const WfcChunk = struct {
 
         var choices = self.terrain.getWfcContextualWeights();
 
-        mulInPlace(&choices, wr);
-        mulInPlace(&choices, wl);
-        mulInPlace(&choices, wd);
-        mulInPlace(&choices, wu);
-        mulInPlace(&choices, wru);
-        mulInPlace(&choices, wrd);
-        mulInPlace(&choices, wlu);
-        mulInPlace(&choices, wld);
+        if (wr) |v|
+            choices *= v;
+        if (wl) |v|
+            choices *= v;
+        if (wd) |v|
+            choices *= v;
+        if (wu) |v|
+            choices *= v;
+        if (wru) |v|
+            choices *= v;
+        if (wrd) |v|
+            choices *= v;
+        if (wlu) |v|
+            choices *= v;
+        if (wld) |v|
+            choices *= v;
 
-        wfc.normalize(&choices) catch {
-            // Temporary: force the error block
-            choices[1] = 1.0;
-            std.debug.print("No solution for block gen!\n", .{});
-        };
+        choices = wfc.normalize(choices);
         ptr.* = WfcBlock{ .undecided = choices };
     }
 
-    // TODO: move to lib
-    fn mulInPlace(a: *ChoicesT, b: ?ChoicesT) void {
-        if (b) |c| {
-            for (a, c) |*aa, cc|
-                aa.* *= cc;
-        }
-    }
-
-    // TODO: actual way to tell direction instead of v bool
-    fn getWeights(self: WfcChunk, x: isize, y: isize, comptime group: []const u8) ?ChoicesT {
+    fn getWeights(self: WfcChunk, x: isize, y: isize, comptime group: []const u8) ?wfc.VecT {
         //std.debug.print("x: {}, y: {}\n", .{ x, y });
         if (x < 0 or x >= Terrain.WIDTH)
             return null;
@@ -140,6 +132,9 @@ pub const WfcChunk = struct {
         var min_x: isize = undefined;
         var min_y: isize = undefined;
         for (self.blocks.buffer, 0..) |layer, y| {
+            // TODO: temporary, only allowing first layer to generate
+            if (y > 0)
+                break;
             for (&layer, 0..) |*wfc_block, x| {
                 if (wfc_block.* == .decided)
                     continue;
@@ -181,14 +176,14 @@ pub const WfcBlockRow = [Terrain.WIDTH]WfcBlock;
 
 pub const WfcBlock = union(enum) {
     not_ready: void,
-    undecided: ChoicesT,
+    undecided: wfc.VecT,
     decided: u8,
     impossible: void,
 
     pub fn getEntropy(self: WfcBlock) !f64 {
         return switch (self) {
             .not_ready => |_| error.NotReady,
-            .undecided => |s| wfc.entropy(&s),
+            .undecided => |s| wfc.entropy(s),
             .decided => |_| 0.0,
             .impossible => |_| error.Impossible,
         };
@@ -198,11 +193,7 @@ pub const WfcBlock = union(enum) {
         if (self.* != .undecided)
             return false;
 
-        var buf: [@sizeOf(ChoicesT) * 2]u8 = undefined;
-        var fba = std.heap.FixedBufferAllocator.init(&buf);
-        const alloc = fba.allocator();
-
-        const result = try wfc.pick(rand, alloc, &self.undecided);
+        const result = try wfc.pick(rand, self.undecided);
         self.* = WfcBlock{ .decided = @intCast(result) };
 
         return true;

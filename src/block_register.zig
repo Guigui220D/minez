@@ -3,6 +3,8 @@ const std = @import("std");
 const Block = @import("Block.zig");
 const atlas = @import("atlas.zig");
 
+const wfc = @import("wfc").Wfc(BLOCK_COUNT, f64);
+
 pub const BLOCK_COUNT: usize = @typeInfo(@import("blocks/blocks.zig")).Struct.decls.len;
 
 pub const BLOCK_NAMES = blk: {
@@ -27,6 +29,7 @@ pub const BLOCK_NAMES = blk: {
 };
 
 pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
+    @setEvalBranchQuota(100000);
     const groups = @import("groups.zig");
     const blocks = @import("blocks/blocks.zig");
     const block_decls = @typeInfo(blocks).Struct.decls;
@@ -38,15 +41,14 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
         const decl = @field(blocks, block.name);
 
         ret[i].name = block.name;
-        // Temporary (TODO)
-        ret[i].dig_time = @as(f32, decl.dig_time) / 10000.0;
+        ret[i].dig_time = @as(f32, decl.dig_time) / 10000;
         ret[i].texture_name = decl.texture;
 
         if (@hasDecl(decl, "score"))
             ret[i].score = decl.score;
 
         for (groups.any) |class|
-            @field(ret[i], "wfc_" ++ class) = Block.default_weights;
+            @field(ret[i], "wfc_" ++ class) = @splat(1.0);
     }
 
     // Assign the WFC weights
@@ -54,9 +56,8 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
         const decl = @field(blocks, block.name);
 
         if (@hasDecl(decl, "wfc")) {
-            const wfc = decl.wfc;
-            for (@typeInfo(wfc).Struct.decls) |group_decl| {
-                const group = @field(wfc, group_decl.name);
+            for (@typeInfo(decl.wfc).Struct.decls) |group_decl| {
+                const group = @field(decl.wfc, group_decl.name);
 
                 if (!@hasDecl(groups, group_decl.name))
                     @compileError("Unknown weight group: " ++ group_decl.name);
@@ -79,10 +80,13 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
                                 const full_name = "wfc_" ++ weight_vec;
                                 const opp_full_name = "wfc_" ++ @field(groups, "opp_" ++ weight_vec);
 
-                                for (&@field(ret[i], full_name)) |*w|
-                                    w.* = wvalue;
-                                for (&ret) |*b|
-                                    @field(b, opp_full_name)[i] = wvalue;
+                                @field(ret[i], full_name) = @splat(wvalue);
+
+                                for (&ret) |*b| {
+                                    var temp: wfc.ArrT = @field(b, opp_full_name);
+                                    temp[i] = wvalue;
+                                    @field(b, opp_full_name) = temp;
+                                }
                             }
                             continue;
                         } else @panic("Block with name " ++ name ++ " doesn't exist");
@@ -98,8 +102,13 @@ pub var ALL_BLOCKS: [BLOCK_COUNT]Block = blk: {
                         //if (@field(ret[i], full_name)[id] != 0.0 or @field(ret[id], full_name)[i] != 0.0)
                         //    @compileError("Neighbors " ++ ret[i].name ++ " and " ++ ret[id].name ++ " have redundant weights!");
 
-                        @field(ret[i], full_name)[id] = wvalue;
-                        @field(ret[id], opp_full_name)[i] = wvalue;
+                        var temp: wfc.ArrT = @field(ret[i], full_name);
+                        temp[id] = wvalue;
+                        @field(ret[i], full_name) = temp;
+
+                        temp = @field(ret[id], opp_full_name);
+                        temp[i] = wvalue;
+                        @field(ret[id], opp_full_name) = temp;
                     }
                 }
             }

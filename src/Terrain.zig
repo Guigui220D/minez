@@ -109,16 +109,16 @@ pub fn getBottomY(self: @This()) usize {
     return self.depth + self.terrain.items.len;
 }
 
-fn only(comptime name: []const u8) wfc.ChoicesT {
+fn only(comptime name: []const u8) wfc.wfc.VecT {
     var zeros = [1]f64{0.0} ** (br.BLOCK_COUNT);
     zeros[@intFromEnum(@field(br.BLOCK_NAMES, name))] = 1.0;
     return zeros;
 }
 
-pub fn getWfcContextualWeights(self: @This()) wfc.ChoicesT {
+pub fn getWfcContextualWeights(self: @This()) wfc.wfc.VecT {
     const y = self.getBottomY();
 
-    var ret = wfc.default_weights;
+    var ret: wfc.wfc.VecT = @splat(1.0);
     ret[@intFromEnum(br.BLOCK_NAMES.err_block)] = 0;
 
     if (y < 9)
@@ -127,7 +127,8 @@ pub fn getWfcContextualWeights(self: @This()) wfc.ChoicesT {
     if (y < 11)
         return only("dirt");
 
-    //ret[@intFromEnum(br.BLOCK_NAMES.err_block)]
+    //ret[@intFromEnum(br.BLOCK_NAMES.stone1)] = std.math.clamp((-@as(f32, @floatFromInt(y)) + 50) / 50, 0, 1) / 2 + 0.5;
+    //ret[@intFromEnum(br.BLOCK_NAMES.stone1)] = std.math.clamp((@as(f32, @floatFromInt(y)) + 100) / 50, 0, 1) / 2 + 0.5;
 
     return ret;
 

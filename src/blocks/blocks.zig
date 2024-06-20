@@ -2,6 +2,13 @@ pub const air = struct {
     pub const dig_time = -1.0;
     pub const texture = "air.png";
     pub const wfc = struct {
+        pub const any = struct {
+            pub const all = 0;
+            pub const stone4 = 1;
+            pub const stalagmite = 1;
+            pub const self = 1;
+            pub const dirt = 1;
+        };
         pub const diag = struct {
             pub const self = 0.8;
         };
@@ -23,6 +30,7 @@ pub const dirt = struct {
     pub const texture = "dirt.png";
     pub const wfc = struct {
         pub const close = struct {
+            pub const all = 0.8;
             pub const self = 1.5;
             pub const stone2 = 0;
             pub const stone3 = 0;
@@ -61,7 +69,7 @@ pub const stone3 = struct {
     pub const wfc = struct {
         pub const close = struct {
             pub const self = 1.5;
-            pub const stone4 = 0;
+            pub const stone1 = 0;
         };
     };
 };
@@ -74,7 +82,7 @@ pub const stone4 = struct {
             pub const self = 2;
         };
         pub const sides = struct {
-            pub const air = 0;
+            pub const air = 0.01;
         };
     };
 };
