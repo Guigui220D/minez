@@ -84,22 +84,24 @@ pub fn update(self: *@This(), delta: f32) void {
 
     self.doing = false;
 
-    if (sf.keyboard.isKeyPressed(.Right)) {
-        self.doing = true;
-        if (self.tryGoRight(delta))
+    if (self.tryGoDown(delta)) {} else {
+        if (sf.keyboard.isKeyPressed(.Right)) {
+            self.doing = true;
+            if (self.tryGoRight(delta))
+                digging = true;
+        } else if (sf.keyboard.isKeyPressed(.Left)) {
+            self.doing = true;
+            if (self.tryGoLeft(delta))
+                digging = true;
+        } else if (sf.keyboard.isKeyPressed(.Down)) {
+            self.doing = true;
+            if (self.digDown(delta))
+                digging = true;
+        } else if (sf.keyboard.isKeyPressed(.Up)) {
+            self.doing = true;
+            self.digUp(delta);
             digging = true;
-    } else if (sf.keyboard.isKeyPressed(.Left)) {
-        self.doing = true;
-        if (self.tryGoLeft(delta))
-            digging = true;
-    } else if (sf.keyboard.isKeyPressed(.Down)) {
-        self.doing = true;
-        if (self.tryGoDown(delta))
-            digging = true;
-    } else if (sf.keyboard.isKeyPressed(.Up)) {
-        self.doing = true;
-        self.digUp(delta);
-        digging = true;
+        }
     }
 
     if (!digging) {
@@ -120,24 +122,38 @@ pub fn draw(self: @This(), target: anytype) void {
     self.score.draw(target);
 }
 
+/// Move down, if possible
+/// Returns true if the player is falling
+fn tryGoDown(self: *@This(), delta: f32) bool {
+    // Reset the horizontal position
+    const hpos = std.math.round(self.hpos);
+
+    const x: usize = @intFromFloat(self.hpos);
+    const block = game.world.getBlock(x, 9);
+    if (block.dig_time <= 0) {
+        self.hpos = hpos;
+        // Scroll the whole terrain
+        game.world.scroll(delta * 10);
+        //self.sprite.setRotation(0);
+        return true;
+    } else _ = game.world.snapScroll();
+    return false;
+}
+
 /// Move down, dig the ground if impossible
 /// Returns true if the player is digging now
-fn tryGoDown(self: *@This(), delta: f32) bool {
+fn digDown(self: *@This(), delta: f32) bool {
+    _ = delta;
     // Reset the horizontal position
     self.hpos = std.math.round(self.hpos);
 
     //self.sprite.setScale(.{ .x = 1, .y = 1 });
     self.sprite.setRotation(-90 * self.sprite.getScale().x);
 
-    // Scroll the whole terrain
-    game.world.scroll(delta * 10);
-
     const x: usize = @intFromFloat(self.hpos);
     const block = game.world.getBlock(x, 9);
     if (block.dig_time >= 0) {
         // There's a block below
-        // Reset the scroll
-        _ = game.world.snapScroll();
         // Dig down
         if (self.dig_clk.getElapsedTime().asSeconds() * self.mining_speed > block.dig_time) {
             self.breakBlock(x, 9);
