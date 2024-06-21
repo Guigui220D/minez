@@ -148,7 +148,7 @@ pub const WfcChunk = struct {
         }
 
         // Collapse the selected block
-        const ret = try self.blocks.buffer[@intCast(min_y)][@intCast(min_x)].choose(self.rand);
+        const ret = self.blocks.buffer[@intCast(min_y)][@intCast(min_x)].choose(self.rand);
         // At this point collapse should always succeed (the selected block has to be an undecided)
         //std.debug.assert(ret);
         _ = ret;
@@ -189,12 +189,14 @@ pub const WfcBlock = union(enum) {
         };
     }
 
-    pub fn choose(self: *WfcBlock, rand: std.Random) !bool {
+    pub fn choose(self: *WfcBlock, rand: std.Random) bool {
         if (self.* != .undecided)
             return false;
 
-        const result = try wfc.pick(rand, self.undecided);
-        self.* = WfcBlock{ .decided = @intCast(result) };
+        self.* = WfcBlock{
+            // TODO: use the name of the error block instead of 1
+            .decided = wfc.pick(rand, self.undecided) catch 1,
+        };
 
         return true;
     }

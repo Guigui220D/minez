@@ -128,12 +128,12 @@ pub fn draw(self: @This(), target: anytype) void {
 /// Move down, if possible
 /// Returns true if the player is falling
 fn tryGoDown(self: *@This(), delta: f32) bool {
-    // Reset the horizontal position
     const hpos = std.math.round(self.hpos);
 
-    const x: usize = @intFromFloat(self.hpos);
+    const x: usize = @intFromFloat(self.hpos + 0.5);
     const block = game.world.getBlock(x, 9);
     if (block.dig_time <= 0) {
+        // Reset the horizontal position
         self.hpos = hpos;
         // Scroll the whole terrain
         game.world.scroll(delta * 10);
